@@ -39,6 +39,7 @@ from main import app
 from models import OrganizationMembership
 from schemas.auth import RegisterRequest
 from services import auth as auth_service
+from services import documents as documents_service
 from services.storage import get_storage
 
 ALEMBIC_INI = Path(__file__).resolve().parents[1] / 'alembic.ini'
@@ -60,11 +61,13 @@ class RegisteredUser:
 class InMemoryStorage:
     def __init__(self) -> None:
         self.objects: dict[str, bytes] = {}
+        self.downloaded: list[str] = []
 
     async def upload(self, key: str, data: bytes, content_type: str) -> None:
         self.objects[key] = data
 
     async def download(self, key: str) -> bytes:
+        self.downloaded.append(key)
         return self.objects[key]
 
     async def delete(self, key: str) -> None:
@@ -96,6 +99,17 @@ async def session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
 @pytest.fixture
 def storage() -> InMemoryStorage:
     return InMemoryStorage()
+
+
+@pytest.fixture(autouse=True)
+def processing_queue(monkeypatch: pytest.MonkeyPatch) -> list[UUID]:
+    queued: list[UUID] = []
+
+    async def enqueue(document_id: UUID) -> None:
+        queued.append(document_id)
+
+    monkeypatch.setattr(documents_service, '_enqueue_processing', enqueue)
+    return queued
 
 
 @pytest.fixture

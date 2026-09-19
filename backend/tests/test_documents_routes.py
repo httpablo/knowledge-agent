@@ -1,8 +1,11 @@
 from http import HTTPStatus
+from io import BytesIO
 from uuid import UUID, uuid4
+from zipfile import ZipFile
 
 import pytest
 from httpx import AsyncClient, Response
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,8 +13,17 @@ from models import Document, DocumentStatus, Organization, User
 from services import documents as documents_service
 from tests.conftest import InMemoryStorage, RegisteredUser
 
+
+def _zip(*names: str) -> bytes:
+    buffer = BytesIO()
+    with ZipFile(buffer, 'w') as package:
+        for name in names:
+            package.writestr(name, '<xml/>')
+    return buffer.getvalue()
+
+
 PDF = b'%PDF-1.7\n%\xe2\xe3\xcf\xd3\n'
-DOCX = b'PK\x03\x04\x14\x00\x06\x00'
+DOCX = _zip('[Content_Types].xml', '_rels/.rels', 'word/document.xml')
 TXT = 'Olá, conteúdo em UTF-8.'.encode()
 
 
@@ -38,6 +50,7 @@ async def test_upload_creates_pending_document_in_user_organization(
     client: AsyncClient,
     session: AsyncSession,
     storage: InMemoryStorage,
+    processing_queue: list[UUID],
     user: RegisteredUser,
     filename: str,
     content: bytes,
@@ -55,6 +68,7 @@ async def test_upload_creates_pending_document_in_user_organization(
     assert document.uploaded_by == user.id
     assert document.storage_key == f'{user.organization_id}/{document.id}'
     assert storage.objects == {document.storage_key: content}
+    assert processing_queue == [document.id]
 
 
 async def test_upload_ignores_client_supplied_organization(
@@ -94,6 +108,21 @@ async def test_upload_strips_directories_from_filename(
         ('fake.pdf', TXT, 'File content does not match its extension'),
         ('fake.docx', PDF, 'File content does not match its extension'),
         (
+            'plain-zip.docx',
+            _zip('readme.txt'),
+            'File content does not match its extension',
+        ),
+        (
+            'partial.docx',
+            _zip('[Content_Types].xml', '_rels/.rels'),
+            'File content does not match its extension',
+        ),
+        (
+            'corrupt.docx',
+            b'PK\x03\x04corrupted',
+            'File content does not match its extension',
+        ),
+        (
             'latin1.txt',
             'Olá'.encode('latin-1'),
             'File content does not match its extension',
@@ -126,6 +155,31 @@ async def test_upload_rejects_file_over_size_limit(
     response = await _upload(client, user, 'big.txt', b'x' * 11)
 
     assert response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+    assert storage.objects == {}
+
+
+async def test_upload_rolls_back_when_processing_queue_is_unavailable(
+    client: AsyncClient,
+    session: AsyncSession,
+    storage: InMemoryStorage,
+    user: RegisteredUser,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def unavailable_queue(document_id: UUID) -> None:
+        raise ConnectionError('broker down')
+
+    monkeypatch.setattr(
+        documents_service, '_enqueue_processing', unavailable_queue
+    )
+
+    response = await _upload(client, user, 'notes.txt', TXT)
+
+    assert response.status_code == HTTPStatus.SERVICE_UNAVAILABLE
+    async with session.begin():
+        documents = await session.scalar(
+            select(func.count()).select_from(Document)
+        )
+    assert documents == 0
     assert storage.objects == {}
 
 

@@ -6,6 +6,11 @@ from fastapi.concurrency import run_in_threadpool
 from core.settings import settings
 
 
+class StorageBucketError(Exception):
+    def __init__(self, bucket: str) -> None:
+        super().__init__(f'Storage bucket {bucket!r} is not available')
+
+
 class StorageService:
     def __init__(self) -> None:
         self._bucket = settings.STORAGE_BUCKET
@@ -25,7 +30,13 @@ class StorageService:
             await run_in_threadpool(
                 self._client.head_bucket, Bucket=self._bucket
             )
-        except ClientError:
+        except ClientError as exc:
+            bucket_missing = exc.response['Error']['Code'] in {
+                '404',
+                'NoSuchBucket',
+            }
+            if not (bucket_missing and settings.STORAGE_AUTO_CREATE_BUCKET):
+                raise StorageBucketError(self._bucket) from exc
             await run_in_threadpool(
                 self._client.create_bucket, Bucket=self._bucket
             )

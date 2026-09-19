@@ -22,8 +22,11 @@ class Settings(BaseSettings):
     STORAGE_SECRET_KEY: SecretStr
     STORAGE_BUCKET: str = 'documents'
     STORAGE_REGION: str = 'us-east-1'
+    STORAGE_AUTO_CREATE_BUCKET: bool = False
 
     MAX_UPLOAD_SIZE_MB: int = 10
+
+    REDIS_URL: str = 'redis://localhost:6379/0'
 
 
 settings = Settings()

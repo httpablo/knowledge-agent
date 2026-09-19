@@ -37,4 +37,9 @@ async def upload_document(
             status_code=status.HTTP_413_CONTENT_TOO_LARGE,
             detail=f'File exceeds {settings.MAX_UPLOAD_SIZE_MB} MB',
         ) from exc
+    except documents_service.ProcessingQueueUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail='Document processing is temporarily unavailable',
+        ) from exc
     return DocumentResponse.model_validate(document)
