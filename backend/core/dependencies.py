@@ -10,6 +10,7 @@ from sqlalchemy import select
 from core.database import SessionDep
 from core.security import decode_access_token
 from models import Organization, OrganizationMembership, User
+from services.storage import StorageService, get_storage
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -81,3 +82,5 @@ async def get_auth_context(
 
 
 Auth = Annotated[AuthContext, Depends(get_auth_context)]
+
+Storage = Annotated[StorageService, Depends(get_storage)]

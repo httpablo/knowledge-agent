@@ -9,21 +9,19 @@ from pydantic import (
     StringConstraints,
 )
 
-Name = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)
-]
-Password = Annotated[str, Field(min_length=8, max_length=128)]
-
 
 class RegisterRequest(BaseModel):
-    name: Name
+    name: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=255),
+    ]
     email: EmailStr
-    password: Password
+    password: str = Field(min_length=8, max_length=128)
 
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: Annotated[str, Field(min_length=1, max_length=128)]
+    password: str = Field(min_length=1, max_length=128)
 
 
 class TokenResponse(BaseModel):

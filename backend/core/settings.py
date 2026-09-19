@@ -17,5 +17,13 @@ class Settings(BaseSettings):
     OPENAI_CHAT_MODEL: str
     OPENAI_EMBEDDING_MODEL: str = 'text-embedding-3-small'
 
+    STORAGE_ENDPOINT_URL: str | None = None
+    STORAGE_ACCESS_KEY: SecretStr
+    STORAGE_SECRET_KEY: SecretStr
+    STORAGE_BUCKET: str = 'documents'
+    STORAGE_REGION: str = 'us-east-1'
+
+    MAX_UPLOAD_SIZE_MB: int = 10
+
 
 settings = Settings()

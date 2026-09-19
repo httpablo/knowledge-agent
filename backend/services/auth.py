@@ -23,7 +23,7 @@ class InvalidCredentialsError(Exception):
 
 
 def normalize_email(email: str) -> str:
-    return email.strip().lower()
+    return email.lower()
 
 
 async def register(session: AsyncSession, data: RegisterRequest) -> str:
@@ -39,7 +39,8 @@ async def register(session: AsyncSession, data: RegisterRequest) -> str:
 
 async def login(session: AsyncSession, data: LoginRequest) -> str:
     email = normalize_email(data.email)
-    user = await session.scalar(select(User).where(User.email == email))
+    async with session.begin():
+        user = await session.scalar(select(User).where(User.email == email))
 
     password_hash = user.password_hash if user else DUMMY_PASSWORD_HASH
     is_valid = await run_in_threadpool(

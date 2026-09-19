@@ -4,11 +4,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from core.database import engine
-from routes import auth
+from routes import auth, documents
+from services.storage import storage
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    await storage.ensure_bucket()
     yield
     await engine.dispose()
 
@@ -16,3 +18,4 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title='Knowledge Agent', lifespan=lifespan)
 
 app.include_router(auth.router)
+app.include_router(documents.router)

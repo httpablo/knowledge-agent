@@ -34,10 +34,12 @@ TEST_DATABASE_URL = _get_test_database_url()
 os.environ['DATABASE_URL'] = TEST_DATABASE_URL
 
 from core.database import get_session
+from core.security import decode_access_token
 from main import app
-from models import OrganizationMembership, User
+from models import OrganizationMembership
 from schemas.auth import RegisterRequest
 from services import auth as auth_service
+from services.storage import get_storage
 
 ALEMBIC_INI = Path(__file__).resolve().parents[1] / 'alembic.ini'
 
@@ -53,6 +55,20 @@ class RegisteredUser:
     @property
     def headers(self) -> dict[str, str]:
         return {'Authorization': f'Bearer {self.token}'}
+
+
+class InMemoryStorage:
+    def __init__(self) -> None:
+        self.objects: dict[str, bytes] = {}
+
+    async def upload(self, key: str, data: bytes, content_type: str) -> None:
+        self.objects[key] = data
+
+    async def download(self, key: str) -> bytes:
+        return self.objects[key]
+
+    async def delete(self, key: str) -> None:
+        self.objects.pop(key, None)
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -78,12 +94,20 @@ async def session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
 
 
 @pytest.fixture
-async def client(engine: AsyncEngine) -> AsyncIterator[AsyncClient]:
+def storage() -> InMemoryStorage:
+    return InMemoryStorage()
+
+
+@pytest.fixture
+async def client(
+    engine: AsyncEngine, storage: InMemoryStorage
+) -> AsyncIterator[AsyncClient]:
     async def get_test_session() -> AsyncIterator[AsyncSession]:
         async with AsyncSession(engine, expire_on_commit=False) as session:
             yield session
 
     app.dependency_overrides[get_session] = get_test_session
+    app.dependency_overrides[get_storage] = lambda: storage
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url='http://test') as ac:
         yield ac
@@ -104,18 +128,16 @@ def make_user(
                 session,
                 RegisterRequest(name=name, email=email, password=password),
             )
+            user_id = UUID(decode_access_token(token))
             async with session.begin():
-                user = await session.scalar(
-                    select(User).where(User.email == email.lower())
-                )
-                membership = await session.scalar(
-                    select(OrganizationMembership).where(
-                        OrganizationMembership.user_id == user.id
+                organization_id = await session.scalar(
+                    select(OrganizationMembership.organization_id).where(
+                        OrganizationMembership.user_id == user_id
                     )
                 )
         return RegisteredUser(
-            id=user.id,
-            organization_id=membership.organization_id,
+            id=user_id,
+            organization_id=organization_id,
             email=email,
             password=password,
             token=token,

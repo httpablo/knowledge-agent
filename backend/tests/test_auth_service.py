@@ -14,7 +14,7 @@ from models import (
     OrganizationMembership,
     User,
 )
-from schemas.auth import RegisterRequest
+from schemas.auth import LoginRequest, RegisterRequest
 from services import auth as auth_service
 from tests.conftest import RegisteredUser
 
@@ -109,6 +109,16 @@ async def test_concurrent_duplicate_registration_is_rejected(
     assert len(errors) == 1
     assert isinstance(errors[0], auth_service.EmailAlreadyRegisteredError)
     assert isinstance(errors[0].__cause__, IntegrityError)
+
+
+async def test_login_leaves_no_open_transaction(
+    session: AsyncSession, user: RegisteredUser
+) -> None:
+    await auth_service.login(
+        session, LoginRequest(email=user.email, password=user.password)
+    )
+
+    assert not session.in_transaction()
 
 
 async def test_auth_dependencies_close_their_read_transactions(
