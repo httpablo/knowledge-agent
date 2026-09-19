@@ -1,3 +1,4 @@
+import asyncio
 import os
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
@@ -76,9 +77,27 @@ class InMemoryStorage:
 
 @pytest.fixture(scope='session', autouse=True)
 def migrated_database() -> None:
+    asyncio.run(_create_test_database())
     config = Config(str(ALEMBIC_INI))
     command.downgrade(config, 'base')
     command.upgrade(config, 'head')
+
+
+async def _create_test_database() -> None:
+    url = make_url(TEST_DATABASE_URL)
+    engine = create_async_engine(
+        url.set(database='postgres'),
+        isolation_level='AUTOCOMMIT',
+        poolclass=NullPool,
+    )
+    async with engine.connect() as conn:
+        exists = await conn.scalar(
+            text('SELECT 1 FROM pg_database WHERE datname = :name'),
+            {'name': url.database},
+        )
+        if not exists:
+            await conn.execute(text(f'CREATE DATABASE "{url.database}"'))
+    await engine.dispose()
 
 
 @pytest.fixture
