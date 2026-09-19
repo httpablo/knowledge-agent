@@ -2,11 +2,17 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
-from zipfile import ZipFile
+from zipfile import BadZipFile, ZipFile
 
 from docx import Document as DocxDocument
 from docx.table import Table
 from pypdf import PdfReader
+
+DOCX_REQUIRED_PARTS = {
+    '[Content_Types].xml',
+    '_rels/.rels',
+    'word/document.xml',
+}
 
 MAX_DOCX_UNCOMPRESSED_BYTES = 50 * 1024 * 1024
 
@@ -45,6 +51,11 @@ def _extract_pdf(content: bytes) -> list[ExtractedSection]:
         text = _clean(page.extract_text() or '')
         if text:
             sections.append(ExtractedSection(text, page_number))
+    if not sections:
+        raise DocumentParsingError(
+            'The PDF has no extractable text; scanned or image-only PDFs '
+            'are not supported'
+        )
     return sections
 
 
@@ -54,7 +65,7 @@ def _extract_txt(content: bytes) -> list[ExtractedSection]:
 
 
 def _extract_docx(content: bytes) -> list[ExtractedSection]:
-    _ensure_docx_size_is_safe(content)
+    validate_docx_package(content)
     document = DocxDocument(BytesIO(content))
 
     blocks = []
@@ -73,10 +84,18 @@ def _table_text(table: Table) -> str:
     )
 
 
-def _ensure_docx_size_is_safe(content: bytes) -> None:
-    with ZipFile(BytesIO(content)) as package:
-        uncompressed = sum(item.file_size for item in package.infolist())
-    if uncompressed > MAX_DOCX_UNCOMPRESSED_BYTES:
+def validate_docx_package(content: bytes) -> None:
+    try:
+        with ZipFile(BytesIO(content)) as package:
+            parts = package.infolist()
+    except BadZipFile as exc:
+        raise DocumentParsingError(
+            'File content does not match its extension'
+        ) from exc
+
+    if not DOCX_REQUIRED_PARTS <= {part.filename for part in parts}:
+        raise DocumentParsingError('File content does not match its extension')
+    if sum(part.file_size for part in parts) > MAX_DOCX_UNCOMPRESSED_BYTES:
         raise DocumentParsingError('The DOCX file expands to an unsafe size')
 
 

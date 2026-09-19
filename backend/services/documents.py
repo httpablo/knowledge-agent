@@ -1,7 +1,5 @@
-from io import BytesIO
 from pathlib import Path
 from uuid import UUID, uuid4
-from zipfile import BadZipFile, ZipFile
 
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import delete
@@ -9,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.settings import settings
 from models import Document, DocumentStatus, Organization, User
+from services.parsing import DocumentParsingError, validate_docx_package
 from services.storage import StorageService
 from tasks.ingestion import process_document
 
@@ -19,12 +18,6 @@ CONTENT_TYPES = {
         'application/vnd.openxmlformats-officedocument'
         '.wordprocessingml.document'
     ),
-}
-
-DOCX_REQUIRED_PARTS = {
-    '[Content_Types].xml',
-    '_rels/.rels',
-    'word/document.xml',
 }
 
 MAX_UPLOAD_SIZE_BYTES = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
@@ -97,26 +90,25 @@ def _validate_file(filename: str, content: bytes) -> str:
         raise InvalidFileError('File is empty')
     if len(content) > MAX_UPLOAD_SIZE_BYTES:
         raise FileTooLargeError
-    if not _content_matches_extension(extension, content):
+    if extension == '.docx':
+        _validate_docx(content)
+    elif not _content_matches_extension(extension, content):
         raise InvalidFileError('File content does not match its extension')
     return CONTENT_TYPES[extension]
+
+
+def _validate_docx(content: bytes) -> None:
+    try:
+        validate_docx_package(content)
+    except DocumentParsingError as exc:
+        raise InvalidFileError(str(exc)) from exc
 
 
 def _content_matches_extension(extension: str, content: bytes) -> bool:
     if extension == '.pdf':
         return content.startswith(b'%PDF-')
-    if extension == '.docx':
-        return _is_docx_package(content)
     try:
         content.decode('utf-8')
     except UnicodeDecodeError:
         return False
     return True
-
-
-def _is_docx_package(content: bytes) -> bool:
-    try:
-        with ZipFile(BytesIO(content)) as package:
-            return DOCX_REQUIRED_PARTS <= set(package.namelist())
-    except BadZipFile:
-        return False

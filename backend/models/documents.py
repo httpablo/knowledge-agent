@@ -45,6 +45,9 @@ class Document(Base):
     )
     storage_key: Mapped[str | None] = mapped_column(String(1024))
     processing_error: Mapped[str | None] = mapped_column(Text)
+    processing_started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

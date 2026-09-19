@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Document, DocumentStatus, Organization, User
 from services import documents as documents_service
+from services import parsing
 from tests.conftest import InMemoryStorage, RegisteredUser
 
 
@@ -155,6 +156,23 @@ async def test_upload_rejects_file_over_size_limit(
     response = await _upload(client, user, 'big.txt', b'x' * 11)
 
     assert response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+    assert storage.objects == {}
+
+
+async def test_upload_rejects_docx_with_unsafe_uncompressed_size(
+    client: AsyncClient,
+    storage: InMemoryStorage,
+    user: RegisteredUser,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(parsing, 'MAX_DOCX_UNCOMPRESSED_BYTES', 10)
+
+    response = await _upload(client, user, 'report.docx', DOCX)
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert response.json() == {
+        'detail': 'The DOCX file expands to an unsafe size'
+    }
     assert storage.objects == {}
 
 

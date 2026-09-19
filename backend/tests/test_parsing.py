@@ -69,33 +69,42 @@ def test_null_characters_are_removed() -> None:
     assert sections == [ExtractedSection('first line', None)]
 
 
-@pytest.mark.parametrize(
-    ('filename', 'content'),
-    [
-        ('blank.pdf', _fixture('blank.pdf')),
-        ('spaces.txt', b'  \n\t  '),
-    ],
-)
-def test_document_without_text_fails(filename: str, content: bytes) -> None:
+def test_pdf_without_text_explains_scans_are_not_supported() -> None:
+    with pytest.raises(
+        DocumentParsingError,
+        match='scanned or image-only PDFs are not supported',
+    ):
+        extract_sections('blank.pdf', _fixture('blank.pdf'))
+
+
+def test_txt_without_text_fails() -> None:
     with pytest.raises(
         DocumentParsingError, match='The document has no extractable text'
     ):
-        extract_sections(filename, content)
+        extract_sections('spaces.txt', b'  \n\t  ')
 
 
 @pytest.mark.parametrize(
     ('filename', 'content'),
     [
         ('corrupt.pdf', b'%PDF-1.7\nnot really a pdf'),
-        ('corrupt.docx', b'PK\x03\x04not really a docx'),
         ('latin1.txt', 'férias'.encode('latin-1')),
     ],
 )
 def test_unparseable_file_fails(filename: str, content: bytes) -> None:
     with pytest.raises(
         DocumentParsingError, match='The file could not be parsed'
-    ):
+    ) as error:
         extract_sections(filename, content)
+
+    assert error.value.__cause__ is not None
+
+
+def test_docx_that_is_not_a_package_fails() -> None:
+    with pytest.raises(
+        DocumentParsingError, match='File content does not match its extension'
+    ):
+        extract_sections('corrupt.docx', b'PK\x03\x04not really a docx')
 
 
 def test_encrypted_pdf_fails() -> None:

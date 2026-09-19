@@ -1,7 +1,8 @@
 import logging
+from datetime import timedelta
 from uuid import UUID
 
-from sqlalchemy import update
+from sqlalchemy import ColumnElement, and_, func, or_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Document, DocumentStatus
@@ -10,13 +11,15 @@ from services.storage import StorageService
 
 logger = logging.getLogger(__name__)
 
+PROCESSING_TIMEOUT = timedelta(minutes=10)
+
 
 async def process_document(
     session: AsyncSession, storage: StorageService, document_id: UUID
 ) -> None:
-    claimed = await _claim_pending_document(session, document_id)
+    claimed = await _claim_document(session, document_id)
     if claimed is None:
-        logger.info('Document %s is not pending; skipping', document_id)
+        logger.info('Document %s is not claimable; skipping', document_id)
         return
     storage_key, filename = claimed
 
@@ -32,7 +35,12 @@ async def process_document(
     try:
         sections = extract_sections(filename, content)
     except DocumentParsingError as exc:
-        logger.warning('Could not parse document %s: %s', document_id, exc)
+        logger.warning(
+            'Could not parse document %s: %s',
+            document_id,
+            exc,
+            exc_info=exc.__cause__ is not None,
+        )
         await _mark_failed(session, document_id, str(exc))
         return
 
@@ -41,21 +49,32 @@ async def process_document(
     )
 
 
-async def _claim_pending_document(
+async def _claim_document(
     session: AsyncSession, document_id: UUID
 ) -> tuple[str, str] | None:
     async with session.begin():
         claimed = await session.execute(
             update(Document)
-            .where(
-                Document.id == document_id,
-                Document.status == DocumentStatus.PENDING,
+            .where(Document.id == document_id, _is_claimable())
+            .values(
+                status=DocumentStatus.PROCESSING,
+                processing_started_at=func.now(),
             )
-            .values(status=DocumentStatus.PROCESSING)
             .returning(Document.storage_key, Document.filename)
         )
         row = claimed.one_or_none()
     return tuple(row) if row else None
+
+
+def _is_claimable() -> ColumnElement[bool]:
+    expired = func.now() - PROCESSING_TIMEOUT
+    return or_(
+        Document.status == DocumentStatus.PENDING,
+        and_(
+            Document.status == DocumentStatus.PROCESSING,
+            Document.processing_started_at < expired,
+        ),
+    )
 
 
 async def _mark_failed(
