@@ -41,6 +41,9 @@ preview = true
 select = ['I', 'F', 'E', 'W', 'PL', 'PT']
 ignore = ['PLR2004', 'PLR0917', 'PLR0913']
 
+[tool.ruff.lint.isort]
+known-third-party = ['alembic']
+
 [tool.ruff.format]
 preview = true
 quote-style = 'single'
@@ -50,3 +53,7 @@ pythonpath = '.'
 asyncio_mode = 'auto'
 asyncio_default_fixture_loop_scope = 'function'
 addopts = '-p no:warnings'
+
+[tool.coverage.run]
+concurrency = ['thread', 'greenlet']
+omit = ['tests/*', 'alembic/*']
