@@ -11,8 +11,6 @@ from core.security import (
 from models import MembershipRole, Organization, OrganizationMembership, User
 from schemas.auth import LoginRequest, RegisterRequest
 
-# Verified against when the e-mail is unknown, so a missing account costs
-# the same time as a wrong password and cannot be told apart.
 DUMMY_PASSWORD_HASH = get_password_hash('dummy-password')
 
 
@@ -29,10 +27,6 @@ def normalize_email(email: str) -> str:
 
 
 async def register(session: AsyncSession, data: RegisterRequest) -> str:
-    """Create user, workspace and OWNER membership in a single transaction.
-
-    Returns an access token for the new user.
-    """
     email = normalize_email(data.email)
     password_hash = await run_in_threadpool(get_password_hash, data.password)
 
