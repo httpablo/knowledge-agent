@@ -1,0 +1,52 @@
+[project]
+name = 'knowledge-agent'
+version = '0.1.0'
+description = 'Multi-tenant knowledge agent with RAG over uploaded documents'
+requires-python = '>=3.12,<4.0'
+dependencies = [
+    'fastapi>=0.115',
+    'uvicorn[standard]>=0.32',
+    'python-multipart>=0.0.20',
+    'sqlalchemy[asyncio]>=2.0',
+    'asyncpg>=0.30',
+    'alembic>=1.14',
+    'pgvector>=0.3',
+    'pydantic[email]>=2.10',
+    'pydantic-settings>=2.7',
+    'pyjwt>=2.10',
+    'pwdlib[argon2]>=0.2',
+    'openai>=1.60',
+    'tenacity>=9.0',
+    'pypdf>=5.1',
+]
+
+[dependency-groups]
+dev = [
+    'ruff>=0.9',
+    'pytest>=8.3',
+    'pytest-asyncio>=0.25',
+    'pytest-cov>=6.0',
+    'httpx>=0.28',
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 79
+extend-exclude = ['alembic']
+
+[tool.ruff.lint]
+preview = true
+select = ['I', 'F', 'E', 'W', 'PL', 'PT']
+ignore = ['PLR2004', 'PLR0917', 'PLR0913']
+
+[tool.ruff.format]
+preview = true
+quote-style = 'single'
+
+[tool.pytest.ini_options]
+pythonpath = '.'
+asyncio_mode = 'auto'
+asyncio_default_fixture_loop_scope = 'function'
+addopts = '-p no:warnings'
