@@ -3,39 +3,35 @@ from datetime import UTC, datetime, timedelta
 import jwt
 from pwdlib import PasswordHash
 
-from core.settings import get_settings
+from core.settings import settings
 
-password_hash = PasswordHash.recommended()
+pwd_context = PasswordHash.recommended()
 
 
-def hash_password(password: str) -> str:
-    return password_hash.hash(password)
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return password_hash.verify(plain_password, hashed_password)
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 def create_access_token(subject: str) -> str:
-    settings = get_settings()
-    expires_at = datetime.now(UTC) + timedelta(
-        minutes=settings.access_token_expire_minutes
+    expire = datetime.now(UTC) + timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
-    payload = {'sub': subject, 'exp': expires_at}
     return jwt.encode(
-        payload,
-        settings.jwt_secret_key.get_secret_value(),
-        algorithm=settings.jwt_algorithm,
+        {'sub': subject, 'exp': expire},
+        settings.JWT_SECRET_KEY.get_secret_value(),
+        algorithm=settings.JWT_ALGORITHM,
     )
 
 
 def decode_access_token(token: str) -> str:
-    """Return the token subject; raise jwt.InvalidTokenError if invalid."""
-    settings = get_settings()
     payload = jwt.decode(
         token,
-        settings.jwt_secret_key.get_secret_value(),
-        algorithms=[settings.jwt_algorithm],
+        settings.JWT_SECRET_KEY.get_secret_value(),
+        algorithms=[settings.JWT_ALGORITHM],
         options={'require': ['sub', 'exp']},
     )
     return payload['sub']
