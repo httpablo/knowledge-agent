@@ -1,6 +1,7 @@
 import asyncio
 import os
 from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
@@ -37,10 +38,11 @@ os.environ['DATABASE_URL'] = TEST_DATABASE_URL
 from core.database import get_session
 from core.security import decode_access_token
 from main import app
-from models import OrganizationMembership
+from models import EMBEDDING_DIMENSIONS, OrganizationMembership
 from schemas.auth import RegisterRequest
 from services import auth as auth_service
 from services import documents as documents_service
+from services import ingestion as ingestion_service
 from services.storage import get_storage
 
 ALEMBIC_INI = Path(__file__).resolve().parents[1] / 'alembic.ini'
@@ -73,6 +75,35 @@ class InMemoryStorage:
 
     async def delete(self, key: str) -> None:
         self.objects.pop(key, None)
+
+
+@asynccontextmanager
+async def fake_embedding_client() -> AsyncIterator[None]:
+    yield None
+
+
+class FakeEmbeddings:
+    def __init__(self) -> None:
+        self.batches: list[list[str]] = []
+        self.error: Exception | None = None
+
+    async def __call__(
+        self, client: None, texts: list[str]
+    ) -> list[list[float]]:
+        self.batches.append(texts)
+        if self.error:
+            raise self.error
+        return [[len(text) % 10 / 10] * EMBEDDING_DIMENSIONS for text in texts]
+
+
+@pytest.fixture(autouse=True)
+def embeddings(monkeypatch: pytest.MonkeyPatch) -> FakeEmbeddings:
+    fake = FakeEmbeddings()
+    monkeypatch.setattr(ingestion_service, 'embed_texts', fake)
+    monkeypatch.setattr(
+        ingestion_service, 'embedding_client', fake_embedding_client
+    )
+    return fake
 
 
 @pytest.fixture(scope='session', autouse=True)

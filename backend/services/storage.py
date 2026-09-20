@@ -57,9 +57,13 @@ class StorageService:
         return await run_in_threadpool(response['Body'].read)
 
     async def delete(self, key: str) -> None:
-        await run_in_threadpool(
-            self._client.delete_object, Bucket=self._bucket, Key=key
-        )
+        try:
+            await run_in_threadpool(
+                self._client.delete_object, Bucket=self._bucket, Key=key
+            )
+        except ClientError as exc:
+            if exc.response['Error']['Code'] not in {'404', 'NoSuchKey'}:
+                raise
 
 
 storage = StorageService()
