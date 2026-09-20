@@ -541,3 +541,24 @@ async def _outcome(document_id: UUID) -> tuple[DocumentStatus, str]:
                     )
                 )
             ).one()
+
+
+def test_worker_task_stops_retrying_a_leased_document(
+    storage: InMemoryStorage,
+    user: RegisteredUser,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    async def leased(*args: object) -> None:
+        raise ingestion.ProcessingLeaseActiveError(30)
+
+    monkeypatch.setattr(ingestion, 'process_document', leased)
+
+    with caplog.at_level(logging.WARNING, logger='tasks.ingestion'):
+        ingestion_task.process_document.apply(
+            args=[str(uuid4())],
+            retries=ingestion_task.MAX_RETRIES,
+            throw=True,
+        )
+
+    assert 'is still leased' in caplog.text

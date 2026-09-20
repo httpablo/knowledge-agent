@@ -1,4 +1,4 @@
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from uuid import UUID, uuid4
 
 from fastapi.concurrency import run_in_threadpool
@@ -21,6 +21,7 @@ CONTENT_TYPES = {
 }
 
 MAX_UPLOAD_SIZE_BYTES = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+MAX_FILENAME_LENGTH = 255
 
 
 class InvalidFileError(Exception):
@@ -43,7 +44,7 @@ async def create_document(
     filename: str,
     content: bytes,
 ) -> Document:
-    filename = Path(filename).name[:255]
+    filename = _safe_filename(filename)
     content_type = _validate_file(filename, content)
 
     document_id = uuid4()
@@ -82,6 +83,14 @@ async def _enqueue_processing(document_id: UUID) -> None:
     await run_in_threadpool(process_document.delay, str(document_id))
 
 
+def _safe_filename(filename: str) -> str:
+    name = PurePosixPath(filename.replace('\\', '/')).name
+    if len(name) <= MAX_FILENAME_LENGTH:
+        return name
+    suffix = PurePosixPath(name).suffix
+    return name[: MAX_FILENAME_LENGTH - len(suffix)] + suffix
+
+
 def _validate_file(filename: str, content: bytes) -> str:
     extension = Path(filename).suffix.lower()
     if extension not in CONTENT_TYPES:
@@ -91,17 +100,13 @@ def _validate_file(filename: str, content: bytes) -> str:
     if len(content) > MAX_UPLOAD_SIZE_BYTES:
         raise FileTooLargeError
     if extension == '.docx':
-        _validate_docx(content)
+        try:
+            validate_docx_package(content)
+        except DocumentParsingError as exc:
+            raise InvalidFileError(str(exc)) from exc
     elif not _content_matches_extension(extension, content):
         raise InvalidFileError('File content does not match its extension')
     return CONTENT_TYPES[extension]
-
-
-def _validate_docx(content: bytes) -> None:
-    try:
-        validate_docx_package(content)
-    except DocumentParsingError as exc:
-        raise InvalidFileError(str(exc)) from exc
 
 
 def _content_matches_extension(extension: str, content: bytes) -> bool:

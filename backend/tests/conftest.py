@@ -1,5 +1,8 @@
 import asyncio
+import math
 import os
+import re
+from binascii import crc32
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -43,6 +46,7 @@ from schemas.auth import RegisterRequest
 from services import auth as auth_service
 from services import documents as documents_service
 from services import ingestion as ingestion_service
+from services import retrieval as retrieval_service
 from services.storage import get_storage
 
 ALEMBIC_INI = Path(__file__).resolve().parents[1] / 'alembic.ini'
@@ -82,6 +86,14 @@ async def fake_embedding_client() -> AsyncIterator[None]:
     yield None
 
 
+def fake_embedding(text: str) -> list[float]:
+    vector = [0.001] * EMBEDDING_DIMENSIONS
+    for word in re.findall(r'\w+', text.lower()):
+        vector[crc32(word.encode()) % EMBEDDING_DIMENSIONS] += 1.0
+    norm = math.sqrt(sum(value * value for value in vector))
+    return [value / norm for value in vector]
+
+
 class FakeEmbeddings:
     def __init__(self) -> None:
         self.batches: list[list[str]] = []
@@ -93,16 +105,15 @@ class FakeEmbeddings:
         self.batches.append(texts)
         if self.error:
             raise self.error
-        return [[len(text) % 10 / 10] * EMBEDDING_DIMENSIONS for text in texts]
+        return [fake_embedding(text) for text in texts]
 
 
 @pytest.fixture(autouse=True)
 def embeddings(monkeypatch: pytest.MonkeyPatch) -> FakeEmbeddings:
     fake = FakeEmbeddings()
-    monkeypatch.setattr(ingestion_service, 'embed_texts', fake)
-    monkeypatch.setattr(
-        ingestion_service, 'embedding_client', fake_embedding_client
-    )
+    for module in (ingestion_service, retrieval_service):
+        monkeypatch.setattr(module, 'embed_texts', fake)
+        monkeypatch.setattr(module, 'embedding_client', fake_embedding_client)
     return fake
 
 

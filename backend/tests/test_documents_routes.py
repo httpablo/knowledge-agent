@@ -88,12 +88,30 @@ async def test_upload_ignores_client_supplied_organization(
     assert document.organization_id == user.organization_id
 
 
+@pytest.mark.parametrize(
+    ('sent', 'stored'),
+    [
+        ('../../etc/notes.txt', 'notes.txt'),
+        ('C:\\Users\\me\\notes.txt', 'notes.txt'),
+    ],
+)
 async def test_upload_strips_directories_from_filename(
+    client: AsyncClient, user: RegisteredUser, sent: str, stored: str
+) -> None:
+    response = await _upload(client, user, sent, TXT)
+
+    assert response.json()['filename'] == stored
+
+
+async def test_upload_keeps_the_extension_of_a_very_long_filename(
     client: AsyncClient, user: RegisteredUser
 ) -> None:
-    response = await _upload(client, user, '../../etc/notes.txt', TXT)
+    response = await _upload(client, user, 'a' * 300 + '.txt', TXT)
 
-    assert response.json()['filename'] == 'notes.txt'
+    assert response.status_code == HTTPStatus.ACCEPTED
+    filename = response.json()['filename']
+    assert len(filename) == 255
+    assert filename.endswith('.txt')
 
 
 @pytest.mark.parametrize(

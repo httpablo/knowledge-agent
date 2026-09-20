@@ -1,10 +1,19 @@
 import logging
 import math
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, and_, delete, func, or_, select, update
+from sqlalchemy import (
+    ColumnElement,
+    and_,
+    delete,
+    extract,
+    func,
+    or_,
+    select,
+    update,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Document, DocumentChunk, DocumentStatus
@@ -15,7 +24,11 @@ from services.embeddings import (
     embed_texts,
     embedding_client,
 )
-from services.parsing import DocumentParsingError, extract_sections
+from services.parsing import (
+    DocumentParsingError,
+    ExtractedSection,
+    extract_sections,
+)
 from services.storage import StorageService
 
 logger = logging.getLogger(__name__)
@@ -39,6 +52,10 @@ class ProcessingLeaseActiveError(Exception):
         self.seconds_remaining = seconds_remaining
 
 
+class _ProcessingFailure(Exception):
+    """Carries the message stored in Document.processing_error."""
+
+
 async def process_document(
     session: AsyncSession, storage: StorageService, document_id: UUID
 ) -> None:
@@ -48,17 +65,18 @@ async def process_document(
         logger.info('Document %s is not claimable; skipping', document_id)
         return
 
-    content = await _download(session, storage, document)
-    if content is None:
+    try:
+        chunks = await _prepare_chunks(storage, document)
+        vectors = await _embed(document, chunks)
+    except _ProcessingFailure as exc:
+        await _fail(session, document.id, str(exc))
         return
-
-    chunks = await _split_into_chunks(session, document, content)
-    if chunks is None:
-        return
-
-    vectors = await _embed(session, document, chunks)
-    if vectors is None:
-        return
+    except TransientEmbeddingError:
+        logger.warning(
+            'Embeddings for document %s failed transiently', document.id
+        )
+        await _release_claim(session, document.id)
+        raise
 
     await _store_chunks(session, document, chunks, vectors)
     await _discard_stored_file(session, storage, document)
@@ -67,24 +85,32 @@ async def process_document(
     )
 
 
+async def _prepare_chunks(
+    storage: StorageService, document: ClaimedDocument
+) -> list[TextChunk]:
+    content = await _download(storage, document)
+    sections = _extract_text(document, content)
+    logger.info(
+        'Extracted %d sections from document %s', len(sections), document.id
+    )
+    return chunk_sections(sections)
+
+
 async def _download(
-    session: AsyncSession, storage: StorageService, document: ClaimedDocument
-) -> bytes | None:
+    storage: StorageService, document: ClaimedDocument
+) -> bytes:
     try:
         return await storage.download(document.storage_key)
-    except Exception:
+    except Exception as exc:
         logger.exception('Could not download document %s', document.id)
-        await _mark_failed(
-            session, document.id, 'Could not read the uploaded file'
-        )
-        return None
+        raise _ProcessingFailure('Could not read the uploaded file') from exc
 
 
-async def _split_into_chunks(
-    session: AsyncSession, document: ClaimedDocument, content: bytes
-) -> list[TextChunk] | None:
+def _extract_text(
+    document: ClaimedDocument, content: bytes
+) -> list[ExtractedSection]:
     try:
-        sections = extract_sections(document.filename, content)
+        return extract_sections(document.filename, content)
     except DocumentParsingError as exc:
         logger.warning(
             'Could not parse document %s: %s',
@@ -92,31 +118,20 @@ async def _split_into_chunks(
             exc,
             exc_info=exc.__cause__ is not None,
         )
-        await _mark_failed(session, document.id, str(exc))
-        return None
-
-    logger.info(
-        'Extracted %d sections from document %s', len(sections), document.id
-    )
-    return chunk_sections(sections)
+        raise _ProcessingFailure(str(exc)) from exc
 
 
 async def _embed(
-    session: AsyncSession, document: ClaimedDocument, chunks: list[TextChunk]
-) -> list[list[float]] | None:
+    document: ClaimedDocument, chunks: list[TextChunk]
+) -> list[list[float]]:
     try:
         async with embedding_client() as client:
-            return await embed_texts(client, [c.text for c in chunks])
+            return await embed_texts(client, [chunk.text for chunk in chunks])
     except TransientEmbeddingError:
-        logger.warning(
-            'Embeddings for document %s failed transiently', document.id
-        )
-        await _release_claim(session, document.id)
         raise
     except EmbeddingError as exc:
         logger.exception('Could not embed document %s', document.id)
-        await _mark_failed(session, document.id, str(exc))
-        return None
+        raise _ProcessingFailure(str(exc)) from exc
 
 
 async def _store_chunks(
@@ -193,12 +208,11 @@ async def _claim_document(
 
 
 def _is_claimable() -> ColumnElement[bool]:
-    expired = func.now() - PROCESSING_TIMEOUT
     return or_(
         Document.status == DocumentStatus.PENDING,
         and_(
             Document.status == DocumentStatus.PROCESSING,
-            Document.processing_started_at < expired,
+            Document.processing_started_at < func.now() - PROCESSING_TIMEOUT,
         ),
     )
 
@@ -206,54 +220,51 @@ def _is_claimable() -> ColumnElement[bool]:
 async def _raise_when_lease_is_active(
     session: AsyncSession, document_id: UUID
 ) -> None:
+    lease_ends_at = Document.processing_started_at + PROCESSING_TIMEOUT
     async with session.begin():
-        row = (
-            await session.execute(
-                select(Document.status, Document.processing_started_at).where(
-                    Document.id == document_id
-                )
-            )
-        ).one_or_none()
-
-    if row is None or row.status != DocumentStatus.PROCESSING:
-        return
-
-    remaining = (
-        row.processing_started_at + PROCESSING_TIMEOUT - datetime.now(UTC)
-    )
-    if remaining > timedelta(0):
-        raise ProcessingLeaseActiveError(math.ceil(remaining.total_seconds()))
-
-
-async def fail_pending_document(
-    session: AsyncSession, document_id: UUID, error: str
-) -> None:
-    async with session.begin():
-        await session.execute(
-            update(Document)
-            .where(
+        remaining = await session.scalar(
+            select(extract('epoch', lease_ends_at - func.now())).where(
                 Document.id == document_id,
-                Document.status == DocumentStatus.PENDING,
+                Document.status == DocumentStatus.PROCESSING,
             )
-            .values(status=DocumentStatus.FAILED, processing_error=error)
         )
+
+    if remaining is not None and remaining > 0:
+        raise ProcessingLeaseActiveError(math.ceil(remaining))
 
 
 async def _release_claim(session: AsyncSession, document_id: UUID) -> None:
     async with session.begin():
         await session.execute(
             update(Document)
-            .where(Document.id == document_id)
+            .where(
+                Document.id == document_id,
+                Document.status == DocumentStatus.PROCESSING,
+            )
             .values(status=DocumentStatus.PENDING, processing_started_at=None)
         )
 
 
-async def _mark_failed(
+async def fail_pending_document(
     session: AsyncSession, document_id: UUID, error: str
+) -> None:
+    await _fail(
+        session,
+        document_id,
+        error,
+        Document.status == DocumentStatus.PENDING,
+    )
+
+
+async def _fail(
+    session: AsyncSession,
+    document_id: UUID,
+    error: str,
+    *conditions: ColumnElement[bool],
 ) -> None:
     async with session.begin():
         await session.execute(
             update(Document)
-            .where(Document.id == document_id)
+            .where(Document.id == document_id, *conditions)
             .values(status=DocumentStatus.FAILED, processing_error=error)
         )
