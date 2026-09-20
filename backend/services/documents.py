@@ -2,7 +2,7 @@ from pathlib import Path, PurePosixPath
 from uuid import UUID, uuid4
 
 from fastapi.concurrency import run_in_threadpool
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.settings import settings
@@ -33,6 +33,10 @@ class FileTooLargeError(Exception):
 
 
 class ProcessingQueueUnavailableError(Exception):
+    pass
+
+
+class DocumentNotFoundError(Exception):
     pass
 
 
@@ -76,6 +80,34 @@ async def create_document(
         await storage.delete(storage_key)
         raise ProcessingQueueUnavailableError from exc
 
+    return document
+
+
+async def list_documents(
+    session: AsyncSession, organization_id: UUID
+) -> list[Document]:
+    async with session.begin():
+        return list(
+            await session.scalars(
+                select(Document)
+                .where(Document.organization_id == organization_id)
+                .order_by(Document.created_at.desc())
+            )
+        )
+
+
+async def get_document(
+    session: AsyncSession, organization_id: UUID, document_id: UUID
+) -> Document:
+    async with session.begin():
+        document = await session.scalar(
+            select(Document).where(
+                Document.id == document_id,
+                Document.organization_id == organization_id,
+            )
+        )
+    if document is None:
+        raise DocumentNotFoundError
     return document
 
 

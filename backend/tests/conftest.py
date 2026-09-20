@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from alembic import command
@@ -41,7 +41,13 @@ os.environ['DATABASE_URL'] = TEST_DATABASE_URL
 from core.database import get_session
 from core.security import decode_access_token
 from main import app
-from models import EMBEDDING_DIMENSIONS, OrganizationMembership
+from models import (
+    EMBEDDING_DIMENSIONS,
+    Document,
+    DocumentChunk,
+    DocumentStatus,
+    OrganizationMembership,
+)
 from schemas.auth import RegisterRequest
 from services import auth as auth_service
 from services import chat as chat_service
@@ -52,6 +58,9 @@ from services.llm_client import GroundedAnswer
 from services.storage import get_storage
 
 ALEMBIC_INI = Path(__file__).resolve().parents[1] / 'alembic.ini'
+
+
+MakeUser = Callable[..., Awaitable['RegisteredUser']]
 
 
 @dataclass(frozen=True)
@@ -153,6 +162,37 @@ def llm(monkeypatch: pytest.MonkeyPatch) -> FakeLLM:
     return fake
 
 
+async def make_document(
+    session: AsyncSession,
+    organization_id: UUID,
+    filename: str,
+    texts: list[str],
+    status: DocumentStatus = DocumentStatus.READY,
+    embeddings: list[list[float]] | None = None,
+) -> Document:
+    vectors = embeddings or [fake_embedding(text) for text in texts]
+    document = Document(
+        id=uuid4(),
+        organization_id=organization_id,
+        filename=filename,
+        status=status,
+    )
+    async with session.begin():
+        session.add(document)
+        session.add_all([
+            DocumentChunk(
+                organization_id=organization_id,
+                document_id=document.id,
+                content=text,
+                embedding=vectors[index],
+                chunk_index=index,
+                page_number=index + 1,
+            )
+            for index, text in enumerate(texts)
+        ])
+    return document
+
+
 @pytest.fixture(scope='session', autouse=True)
 def migrated_database() -> None:
     asyncio.run(_create_test_database())
@@ -226,9 +266,7 @@ async def client(
 
 
 @pytest.fixture
-def make_user(
-    engine: AsyncEngine,
-) -> Callable[..., Awaitable[RegisteredUser]]:
+def make_user(engine: AsyncEngine) -> MakeUser:
     async def _make_user(
         name: str = 'Alice',
         email: str = 'alice@example.com',
@@ -258,7 +296,5 @@ def make_user(
 
 
 @pytest.fixture
-async def user(
-    make_user: Callable[..., Awaitable[RegisteredUser]],
-) -> RegisteredUser:
+async def user(make_user: MakeUser) -> RegisteredUser:
     return await make_user()

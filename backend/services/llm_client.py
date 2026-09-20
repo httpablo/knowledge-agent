@@ -9,6 +9,7 @@ from openai import (
     OpenAIError,
     RateLimitError,
 )
+from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel
 from tenacity import (
     retry,
@@ -85,7 +86,7 @@ async def generate_grounded_answer(
 )
 async def _request_answer(
     client: AsyncOpenAI, system_prompt: str, user_prompt: str
-) -> object:
+) -> ParsedChatCompletion[GroundedAnswer]:
     return await client.chat.completions.parse(
         model=settings.OPENAI_CHAT_MODEL,
         messages=[

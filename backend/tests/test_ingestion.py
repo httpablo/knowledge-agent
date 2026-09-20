@@ -562,3 +562,65 @@ def test_worker_task_stops_retrying_a_leased_document(
         )
 
     assert 'is still leased' in caplog.text
+
+
+async def test_failed_document_also_releases_its_stored_file(
+    session: AsyncSession, storage: InMemoryStorage, user: RegisteredUser
+) -> None:
+    document = await _pending_document(
+        session,
+        storage,
+        user,
+        'scan.pdf',
+        (FIXTURES / 'blank.pdf').read_bytes(),
+    )
+
+    await ingestion.process_document(session, storage, document.id)
+
+    failed = await _reload(session, document.id)
+    assert failed.status == DocumentStatus.FAILED
+    assert failed.storage_key is None
+    assert storage.objects == {}
+
+
+async def test_failed_document_keeps_its_key_when_removal_fails(
+    session: AsyncSession,
+    storage: InMemoryStorage,
+    user: RegisteredUser,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    document = await _pending_document(
+        session,
+        storage,
+        user,
+        'scan.pdf',
+        (FIXTURES / 'blank.pdf').read_bytes(),
+    )
+    storage_key = document.storage_key
+
+    async def failing_delete(key: str) -> None:
+        raise ConnectionError('storage unreachable')
+
+    monkeypatch.setattr(storage, 'delete', failing_delete)
+
+    await ingestion.process_document(session, storage, document.id)
+
+    failed = await _reload(session, document.id)
+    assert failed.status == DocumentStatus.FAILED
+    assert failed.storage_key == storage_key
+
+
+async def test_giving_up_on_embeddings_also_releases_the_stored_file(
+    session: AsyncSession, storage: InMemoryStorage, user: RegisteredUser
+) -> None:
+    document = await _pending_document(session, storage, user)
+
+    await ingestion.fail_pending_document(
+        session, storage, document.id, 'embeddings unavailable'
+    )
+
+    failed = await _reload(session, document.id)
+    assert failed.status == DocumentStatus.FAILED
+    assert failed.processing_error == 'embeddings unavailable'
+    assert failed.storage_key is None
+    assert storage.objects == {}

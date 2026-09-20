@@ -70,6 +70,9 @@ async def process_document(
         vectors = await _embed(document, chunks)
     except _ProcessingFailure as exc:
         await _fail(session, document.id, str(exc))
+        await _discard_stored_file(
+            session, storage, document.id, document.storage_key
+        )
         return
     except TransientEmbeddingError:
         logger.warning(
@@ -79,7 +82,9 @@ async def process_document(
         raise
 
     await _store_chunks(session, document, chunks, vectors)
-    await _discard_stored_file(session, storage, document)
+    await _discard_stored_file(
+        session, storage, document.id, document.storage_key
+    )
     logger.info(
         'Document %s is ready with %d chunks', document.id, len(chunks)
     )
@@ -165,22 +170,25 @@ async def _store_chunks(
 
 
 async def _discard_stored_file(
-    session: AsyncSession, storage: StorageService, document: ClaimedDocument
+    session: AsyncSession,
+    storage: StorageService,
+    document_id: UUID,
+    storage_key: str,
 ) -> None:
     try:
-        await storage.delete(document.storage_key)
+        await storage.delete(storage_key)
     except Exception:
         logger.exception(
-            'Document %s is ready but its file was not removed: %s',
-            document.id,
-            document.storage_key,
+            'File of document %s was not removed: %s',
+            document_id,
+            storage_key,
         )
         return
 
     async with session.begin():
         await session.execute(
             update(Document)
-            .where(Document.id == document.id)
+            .where(Document.id == document_id)
             .values(storage_key=None)
         )
 
@@ -246,14 +254,23 @@ async def _release_claim(session: AsyncSession, document_id: UUID) -> None:
 
 
 async def fail_pending_document(
-    session: AsyncSession, document_id: UUID, error: str
+    session: AsyncSession,
+    storage: StorageService,
+    document_id: UUID,
+    error: str,
 ) -> None:
-    await _fail(
-        session,
-        document_id,
-        error,
-        Document.status == DocumentStatus.PENDING,
-    )
+    async with session.begin():
+        storage_key = await session.scalar(
+            update(Document)
+            .where(
+                Document.id == document_id,
+                Document.status == DocumentStatus.PENDING,
+            )
+            .values(status=DocumentStatus.FAILED, processing_error=error)
+            .returning(Document.storage_key)
+        )
+    if storage_key:
+        await _discard_stored_file(session, storage, document_id, storage_key)
 
 
 async def _fail(

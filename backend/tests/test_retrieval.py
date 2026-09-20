@@ -1,50 +1,19 @@
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import Document, DocumentChunk, DocumentStatus
+from models import DocumentStatus
 from services import retrieval
-from tests.conftest import RegisteredUser, fake_embedding
+from tests.conftest import MakeUser, RegisteredUser, make_document
 
 VACATION_QUESTION = 'Quantos dias de férias por ano?'
-
-
-async def _document(
-    session: AsyncSession,
-    organization_id: UUID,
-    filename: str,
-    texts: list[str],
-    status: DocumentStatus = DocumentStatus.READY,
-    embeddings: list[list[float]] | None = None,
-) -> Document:
-    vectors = embeddings or [fake_embedding(text) for text in texts]
-    document = Document(
-        id=uuid4(),
-        organization_id=organization_id,
-        filename=filename,
-        status=status,
-    )
-    async with session.begin():
-        session.add(document)
-        session.add_all([
-            DocumentChunk(
-                organization_id=organization_id,
-                document_id=document.id,
-                content=text,
-                embedding=vectors[index],
-                chunk_index=index,
-                page_number=index + 1,
-            )
-            for index, text in enumerate(texts)
-        ])
-    return document
 
 
 async def test_search_returns_the_closest_chunk_first(
     session: AsyncSession, user: RegisteredUser
 ) -> None:
-    await _document(
+    await make_document(
         session,
         user.organization_id,
         'policy.pdf',
@@ -66,7 +35,7 @@ async def test_search_returns_the_closest_chunk_first(
 async def test_search_returns_the_metadata_needed_for_citations(
     session: AsyncSession, user: RegisteredUser
 ) -> None:
-    document = await _document(
+    document = await make_document(
         session,
         user.organization_id,
         'policy.pdf',
@@ -87,7 +56,7 @@ async def test_search_returns_the_metadata_needed_for_citations(
 async def test_search_is_limited_to_top_k(
     session: AsyncSession, user: RegisteredUser
 ) -> None:
-    await _document(
+    await make_document(
         session,
         user.organization_id,
         'policy.pdf',
@@ -115,7 +84,7 @@ async def test_search_is_limited_to_top_k(
 async def test_search_ignores_documents_that_are_not_ready(
     session: AsyncSession, user: RegisteredUser, status: DocumentStatus
 ) -> None:
-    await _document(
+    await make_document(
         session,
         user.organization_id,
         'draft.pdf',
@@ -141,17 +110,17 @@ async def test_search_without_documents_returns_nothing(
 
 
 async def test_each_organization_retrieves_only_its_own_answer(
-    session: AsyncSession, make_user: object
+    session: AsyncSession, make_user: MakeUser
 ) -> None:
     alice = await make_user(name='Alice', email='alice@example.com')
     bob = await make_user(name='Bob', email='bob@example.com')
-    await _document(
+    await make_document(
         session,
         alice.organization_id,
         'alice-policy.pdf',
         ['Cada colaborador tem 30 dias de férias por ano.'],
     )
-    await _document(
+    await make_document(
         session,
         bob.organization_id,
         'bob-policy.pdf',

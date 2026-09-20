@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, HTTPException, UploadFile, status
 
 from core.database import SessionDep
@@ -7,6 +9,8 @@ from schemas.documents import DocumentResponse
 from services import documents as documents_service
 
 router = APIRouter(prefix='/documents', tags=['documents'])
+
+DOCUMENT_NOT_FOUND = 'Document not found'
 
 
 @router.post(
@@ -41,5 +45,32 @@ async def upload_document(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail='Document processing is temporarily unavailable',
+        ) from exc
+    return DocumentResponse.model_validate(document)
+
+
+@router.get('', response_model=list[DocumentResponse])
+async def list_documents(
+    auth: Auth, session: SessionDep
+) -> list[DocumentResponse]:
+    documents = await documents_service.list_documents(
+        session, auth.organization.id
+    )
+    return [
+        DocumentResponse.model_validate(document) for document in documents
+    ]
+
+
+@router.get('/{document_id}', response_model=DocumentResponse)
+async def get_document(
+    document_id: UUID, auth: Auth, session: SessionDep
+) -> DocumentResponse:
+    try:
+        document = await documents_service.get_document(
+            session, auth.organization.id, document_id
+        )
+    except documents_service.DocumentNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=DOCUMENT_NOT_FOUND
         ) from exc
     return DocumentResponse.model_validate(document)

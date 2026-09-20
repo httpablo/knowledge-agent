@@ -63,7 +63,7 @@ async def _process_document(document_id: UUID) -> None:
 async def _fail_document(document_id: UUID) -> None:
     async with _session() as session:
         await ingestion.fail_pending_document(
-            session, document_id, EMBEDDINGS_UNAVAILABLE
+            session, storage, document_id, EMBEDDINGS_UNAVAILABLE
         )
 
 

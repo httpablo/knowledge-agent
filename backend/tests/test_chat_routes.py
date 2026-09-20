@@ -7,8 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Conversation, Message, MessageRole
 from services.llm_client import GroundedAnswer, TransientLLMError
-from tests.conftest import FakeLLM, RegisteredUser
-from tests.test_retrieval import _document
+from tests.conftest import FakeLLM, MakeUser, RegisteredUser, make_document
 
 QUESTION = 'Quantos dias de férias por ano?'
 CHUNK = 'Cada colaborador tem 30 dias de férias por ano.'
@@ -33,7 +32,7 @@ async def test_chat_creates_a_conversation_and_persists_both_messages(
     user: RegisteredUser,
     llm: FakeLLM,
 ) -> None:
-    await _document(session, user.organization_id, 'policy.pdf', [CHUNK])
+    await make_document(session, user.organization_id, 'policy.pdf', [CHUNK])
     llm.answers(
         GroundedAnswer(
             answerable=True, answer='São 30 dias.', source_ids=['S1']
@@ -73,7 +72,7 @@ async def test_chat_appends_to_an_existing_conversation(
     user: RegisteredUser,
     llm: FakeLLM,
 ) -> None:
-    await _document(session, user.organization_id, 'policy.pdf', [CHUNK])
+    await make_document(session, user.organization_id, 'policy.pdf', [CHUNK])
     first = await client.post(
         '/chat', headers=user.headers, json={'question': QUESTION}
     )
@@ -95,7 +94,7 @@ async def test_unanswerable_question_is_persisted_without_sources(
     user: RegisteredUser,
     llm: FakeLLM,
 ) -> None:
-    await _document(session, user.organization_id, 'policy.pdf', [CHUNK])
+    await make_document(session, user.organization_id, 'policy.pdf', [CHUNK])
     llm.answers(GroundedAnswer(answerable=False, answer='', source_ids=[]))
 
     response = await client.post(
@@ -118,7 +117,7 @@ async def test_model_failure_returns_503_without_persisting_an_answer(
     user: RegisteredUser,
     llm: FakeLLM,
 ) -> None:
-    await _document(session, user.organization_id, 'policy.pdf', [CHUNK])
+    await make_document(session, user.organization_id, 'policy.pdf', [CHUNK])
     llm.answers(TransientLLMError('unavailable'))
 
     response = await client.post(
@@ -136,7 +135,7 @@ async def test_chat_rejects_a_conversation_from_another_organization(
     client: AsyncClient,
     session: AsyncSession,
     user: RegisteredUser,
-    make_user: object,
+    make_user: MakeUser,
 ) -> None:
     other = await make_user(name='Bob', email='bob@example.com')
     conversation = Conversation(
@@ -161,7 +160,7 @@ async def test_chat_rejects_a_conversation_from_another_user(
     client: AsyncClient,
     session: AsyncSession,
     user: RegisteredUser,
-    make_user: object,
+    make_user: MakeUser,
 ) -> None:
     other = await make_user(name='Bob', email='bob@example.com')
     conversation = Conversation(
@@ -210,7 +209,7 @@ async def test_history_returns_messages_with_the_same_citations(
     user: RegisteredUser,
     llm: FakeLLM,
 ) -> None:
-    await _document(session, user.organization_id, 'policy.pdf', [CHUNK])
+    await make_document(session, user.organization_id, 'policy.pdf', [CHUNK])
     posted = (
         await client.post(
             '/chat', headers=user.headers, json={'question': QUESTION}
@@ -237,7 +236,7 @@ async def test_history_of_another_user_is_not_found(
     client: AsyncClient,
     session: AsyncSession,
     user: RegisteredUser,
-    make_user: object,
+    make_user: MakeUser,
 ) -> None:
     other = await make_user(name='Bob', email='bob@example.com')
     conversation = Conversation(

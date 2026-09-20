@@ -12,4 +12,5 @@ class DocumentResponse(BaseModel):
     id: UUID
     filename: str
     status: DocumentStatus
+    processing_error: str | None
     created_at: datetime
