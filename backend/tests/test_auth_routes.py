@@ -31,7 +31,7 @@ async def test_register_returns_token_for_new_workspace(
     client: AsyncClient,
 ) -> None:
     response = await client.post(
-        '/auth/register',
+        '/api/v1/auth/register',
         json={
             'name': 'Alice',
             'email': 'alice@example.com',
@@ -42,7 +42,7 @@ async def test_register_returns_token_for_new_workspace(
     assert response.status_code == HTTPStatus.CREATED
     token = response.json()['access_token']
     me = await client.get(
-        '/auth/me', headers={'Authorization': f'Bearer {token}'}
+        '/api/v1/auth/me', headers={'Authorization': f'Bearer {token}'}
     )
     assert me.json()['organization']['name'] == 'Alice Workspace'
 
@@ -51,7 +51,7 @@ async def test_register_rejects_email_already_used_in_any_case(
     client: AsyncClient, user: RegisteredUser
 ) -> None:
     response = await client.post(
-        '/auth/register',
+        '/api/v1/auth/register',
         json={
             'name': 'Other',
             'email': user.email.upper(),
@@ -82,7 +82,7 @@ async def test_register_validates_payload(
         field: value,
     }
 
-    response = await client.post('/auth/register', json=payload)
+    response = await client.post('/api/v1/auth/register', json=payload)
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     assert response.json()['detail'][0]['loc'] == ['body', field]
@@ -92,7 +92,7 @@ async def test_login_normalizes_email(
     client: AsyncClient, user: RegisteredUser
 ) -> None:
     response = await client.post(
-        '/auth/login',
+        '/api/v1/auth/login',
         json={
             'email': f'  {user.email.upper()} ',
             'password': user.password,
@@ -107,11 +107,11 @@ async def test_login_does_not_reveal_whether_account_exists(
     client: AsyncClient, user: RegisteredUser
 ) -> None:
     wrong_password = await client.post(
-        '/auth/login',
+        '/api/v1/auth/login',
         json={'email': user.email, 'password': 'wrong-password'},
     )
     unknown_email = await client.post(
-        '/auth/login',
+        '/api/v1/auth/login',
         json={'email': 'nobody@example.com', 'password': user.password},
     )
 
@@ -124,7 +124,7 @@ async def test_login_does_not_reveal_whether_account_exists(
 async def test_me_returns_user_and_organization(
     client: AsyncClient, user: RegisteredUser
 ) -> None:
-    response = await client.get('/auth/me', headers=user.headers)
+    response = await client.get('/api/v1/auth/me', headers=user.headers)
 
     assert response.status_code == HTTPStatus.OK
     assert response.json() == {
@@ -166,7 +166,7 @@ async def test_me_rejects_invalid_credentials_uniformly(
 ) -> None:
     headers = {'Authorization': authorization} if authorization else {}
 
-    response = await client.get('/auth/me', headers=headers)
+    response = await client.get('/api/v1/auth/me', headers=headers)
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
     assert response.json() == CREDENTIALS_ERROR
@@ -188,7 +188,7 @@ async def test_me_rejects_user_with_multiple_memberships(
             )
         )
 
-    response = await client.get('/auth/me', headers=user.headers)
+    response = await client.get('/api/v1/auth/me', headers=user.headers)
 
     assert response.status_code == HTTPStatus.CONFLICT
 
@@ -202,6 +202,6 @@ async def test_me_rejects_user_without_membership(
         )
         await session.delete(membership)
 
-    response = await client.get('/auth/me', headers=user.headers)
+    response = await client.get('/api/v1/auth/me', headers=user.headers)
 
     assert response.status_code == HTTPStatus.FORBIDDEN

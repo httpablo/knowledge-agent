@@ -36,7 +36,7 @@ async def _upload(
     data: dict[str, str] | None = None,
 ) -> Response:
     return await client.post(
-        '/documents',
+        '/api/v1/documents',
         headers=user.headers,
         files={'file': (filename, content, 'application/octet-stream')},
         data=data,
@@ -221,7 +221,7 @@ async def test_upload_rolls_back_when_processing_queue_is_unavailable(
 
 async def test_upload_requires_authentication(client: AsyncClient) -> None:
     response = await client.post(
-        '/documents', files={'file': ('notes.txt', TXT, 'text/plain')}
+        '/api/v1/documents', files={'file': ('notes.txt', TXT, 'text/plain')}
     )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED

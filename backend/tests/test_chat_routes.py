@@ -40,7 +40,7 @@ async def test_chat_creates_a_conversation_and_persists_both_messages(
     )
 
     response = await client.post(
-        '/chat', headers=user.headers, json={'question': QUESTION}
+        '/api/v1/chat', headers=user.headers, json={'question': QUESTION}
     )
 
     assert response.status_code == HTTPStatus.OK
@@ -74,12 +74,12 @@ async def test_chat_appends_to_an_existing_conversation(
 ) -> None:
     await make_document(session, user.organization_id, 'policy.pdf', [CHUNK])
     first = await client.post(
-        '/chat', headers=user.headers, json={'question': QUESTION}
+        '/api/v1/chat', headers=user.headers, json={'question': QUESTION}
     )
     conversation_id = first.json()['conversation_id']
 
     second = await client.post(
-        '/chat',
+        '/api/v1/chat',
         headers=user.headers,
         json={'question': QUESTION, 'conversation_id': conversation_id},
     )
@@ -98,7 +98,7 @@ async def test_unanswerable_question_is_persisted_without_sources(
     llm.answers(GroundedAnswer(answerable=False, answer='', source_ids=[]))
 
     response = await client.post(
-        '/chat', headers=user.headers, json={'question': QUESTION}
+        '/api/v1/chat', headers=user.headers, json={'question': QUESTION}
     )
 
     body = response.json()
@@ -121,7 +121,7 @@ async def test_model_failure_returns_503_without_persisting_an_answer(
     llm.answers(TransientLLMError('unavailable'))
 
     response = await client.post(
-        '/chat', headers=user.headers, json={'question': QUESTION}
+        '/api/v1/chat', headers=user.headers, json={'question': QUESTION}
     )
 
     assert response.status_code == HTTPStatus.SERVICE_UNAVAILABLE
@@ -145,7 +145,7 @@ async def test_chat_rejects_a_conversation_from_another_organization(
         session.add(conversation)
 
     response = await client.post(
-        '/chat',
+        '/api/v1/chat',
         headers=user.headers,
         json={
             'question': QUESTION,
@@ -170,7 +170,7 @@ async def test_chat_rejects_a_conversation_from_another_user(
         session.add(conversation)
 
     response = await client.post(
-        '/chat',
+        '/api/v1/chat',
         headers=user.headers,
         json={
             'question': QUESTION,
@@ -185,7 +185,7 @@ async def test_chat_rejects_an_unknown_conversation(
     client: AsyncClient, user: RegisteredUser
 ) -> None:
     response = await client.post(
-        '/chat',
+        '/api/v1/chat',
         headers=user.headers,
         json={'question': QUESTION, 'conversation_id': str(uuid4())},
     )
@@ -197,7 +197,7 @@ async def test_chat_validates_the_question(
     client: AsyncClient, user: RegisteredUser
 ) -> None:
     response = await client.post(
-        '/chat', headers=user.headers, json={'question': '   '}
+        '/api/v1/chat', headers=user.headers, json={'question': '   '}
     )
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
@@ -212,12 +212,12 @@ async def test_history_returns_messages_with_the_same_citations(
     await make_document(session, user.organization_id, 'policy.pdf', [CHUNK])
     posted = (
         await client.post(
-            '/chat', headers=user.headers, json={'question': QUESTION}
+            '/api/v1/chat', headers=user.headers, json={'question': QUESTION}
         )
     ).json()
 
     response = await client.get(
-        f'/conversations/{posted["conversation_id"]}/messages',
+        f'/api/v1/conversations/{posted["conversation_id"]}/messages',
         headers=user.headers,
     )
 
@@ -246,15 +246,16 @@ async def test_history_of_another_user_is_not_found(
         session.add(conversation)
 
     response = await client.get(
-        f'/conversations/{conversation.id}/messages', headers=user.headers
+        f'/api/v1/conversations/{conversation.id}/messages',
+        headers=user.headers,
     )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
 async def test_chat_requires_authentication(client: AsyncClient) -> None:
-    ask = await client.post('/chat', json={'question': QUESTION})
-    history = await client.get(f'/conversations/{uuid4()}/messages')
+    ask = await client.post('/api/v1/chat', json={'question': QUESTION})
+    history = await client.get(f'/api/v1/conversations/{uuid4()}/messages')
 
     assert ask.status_code == HTTPStatus.UNAUTHORIZED
     assert history.status_code == HTTPStatus.UNAUTHORIZED

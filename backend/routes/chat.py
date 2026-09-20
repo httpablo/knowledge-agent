@@ -8,13 +8,16 @@ from schemas.chat import ChatRequest, ChatResponse, MessageResponse
 from services import chat as chat_service
 from services.llm_client import LLMError
 
-router = APIRouter(tags=['chat'])
+router = APIRouter(prefix='/chat', tags=['chat'])
+conversations_router = APIRouter(
+    prefix='/conversations', tags=['conversations']
+)
 
 CONVERSATION_NOT_FOUND = 'Conversation not found'
 ASSISTANT_UNAVAILABLE = 'The assistant is temporarily unavailable'
 
 
-@router.post('/chat', response_model=ChatResponse)
+@router.post('', response_model=ChatResponse)
 async def ask(
     data: ChatRequest, auth: Auth, session: SessionDep
 ) -> ChatResponse:
@@ -46,8 +49,8 @@ async def ask(
     )
 
 
-@router.get(
-    '/conversations/{conversation_id}/messages',
+@conversations_router.get(
+    '/{conversation_id}/messages',
     response_model=list[MessageResponse],
 )
 async def list_messages(

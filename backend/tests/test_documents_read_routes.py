@@ -39,7 +39,7 @@ async def test_list_returns_only_the_requested_fields(
 ) -> None:
     await _document(session, user, 'policy.pdf')
 
-    response = await client.get('/documents', headers=user.headers)
+    response = await client.get('/api/v1/documents', headers=user.headers)
 
     assert response.status_code == HTTPStatus.OK
     [document] = response.json()
@@ -62,7 +62,7 @@ async def test_list_is_ordered_from_newest_to_oldest(
         session, user, 'middle.pdf', created_at=now - timedelta(hours=1)
     )
 
-    response = await client.get('/documents', headers=user.headers)
+    response = await client.get('/api/v1/documents', headers=user.headers)
 
     assert [document['filename'] for document in response.json()] == [
         'newest.pdf',
@@ -91,9 +91,11 @@ async def test_every_status_is_exposed(
         session, user, 'policy.pdf', status, processing_error
     )
 
-    listed = (await client.get('/documents', headers=user.headers)).json()
+    listed = (
+        await client.get('/api/v1/documents', headers=user.headers)
+    ).json()
     detail = await client.get(
-        f'/documents/{document.id}', headers=user.headers
+        f'/api/v1/documents/{document.id}', headers=user.headers
     )
 
     assert listed[0]['status'] == status
@@ -113,7 +115,7 @@ async def test_list_shows_only_documents_of_the_authenticated_organization(
     await _document(session, user, 'mine.pdf')
     await _document(session, other, 'theirs.pdf')
 
-    response = await client.get('/documents', headers=user.headers)
+    response = await client.get('/api/v1/documents', headers=user.headers)
 
     assert [document['filename'] for document in response.json()] == [
         'mine.pdf'
@@ -130,7 +132,7 @@ async def test_document_of_another_organization_is_not_found(
     document = await _document(session, other, 'theirs.pdf')
 
     response = await client.get(
-        f'/documents/{document.id}', headers=user.headers
+        f'/api/v1/documents/{document.id}', headers=user.headers
     )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -140,7 +142,9 @@ async def test_document_of_another_organization_is_not_found(
 async def test_unknown_document_is_not_found(
     client: AsyncClient, user: RegisteredUser
 ) -> None:
-    response = await client.get(f'/documents/{uuid4()}', headers=user.headers)
+    response = await client.get(
+        f'/api/v1/documents/{uuid4()}', headers=user.headers
+    )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
 
@@ -151,7 +155,7 @@ async def test_detail_never_exposes_the_storage_key(
     document = await _document(session, user, 'policy.pdf')
 
     response = await client.get(
-        f'/documents/{document.id}', headers=user.headers
+        f'/api/v1/documents/{document.id}', headers=user.headers
     )
 
     assert set(response.json()) == FIELDS
@@ -161,7 +165,7 @@ async def test_detail_never_exposes_the_storage_key(
 async def test_empty_organization_lists_nothing(
     client: AsyncClient, user: RegisteredUser
 ) -> None:
-    response = await client.get('/documents', headers=user.headers)
+    response = await client.get('/api/v1/documents', headers=user.headers)
 
     assert response.json() == []
 
@@ -169,8 +173,8 @@ async def test_empty_organization_lists_nothing(
 async def test_reading_documents_requires_authentication(
     client: AsyncClient,
 ) -> None:
-    listed = await client.get('/documents')
-    detail = await client.get(f'/documents/{uuid4()}')
+    listed = await client.get('/api/v1/documents')
+    detail = await client.get(f'/api/v1/documents/{uuid4()}')
 
     assert listed.status_code == HTTPStatus.UNAUTHORIZED
     assert detail.status_code == HTTPStatus.UNAUTHORIZED

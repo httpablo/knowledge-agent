@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from core.database import engine
-from routes import auth, chat, documents
+from routes import api_router
 from services.storage import storage
 
 
@@ -17,6 +17,4 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title='Knowledge Agent', lifespan=lifespan)
 
-app.include_router(auth.router)
-app.include_router(documents.router)
-app.include_router(chat.router)
+app.include_router(api_router)
