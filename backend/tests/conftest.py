@@ -44,9 +44,11 @@ from main import app
 from models import EMBEDDING_DIMENSIONS, OrganizationMembership
 from schemas.auth import RegisterRequest
 from services import auth as auth_service
+from services import chat as chat_service
 from services import documents as documents_service
 from services import ingestion as ingestion_service
 from services import retrieval as retrieval_service
+from services.llm_client import GroundedAnswer
 from services.storage import get_storage
 
 ALEMBIC_INI = Path(__file__).resolve().parents[1] / 'alembic.ini'
@@ -114,6 +116,40 @@ def embeddings(monkeypatch: pytest.MonkeyPatch) -> FakeEmbeddings:
     for module in (ingestion_service, retrieval_service):
         monkeypatch.setattr(module, 'embed_texts', fake)
         monkeypatch.setattr(module, 'embedding_client', fake_embedding_client)
+    return fake
+
+
+class FakeLLM:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+        self.responses: list[GroundedAnswer | Exception] = []
+
+    def answers(self, *responses: GroundedAnswer | Exception) -> None:
+        self.responses = list(responses)
+
+    @property
+    def prompt(self) -> str:
+        return self.calls[-1]
+
+    async def __call__(
+        self, client: None, system_prompt: str, user_prompt: str
+    ) -> GroundedAnswer:
+        self.calls.append(user_prompt)
+        if not self.responses:
+            return GroundedAnswer(
+                answerable=True, answer='An answer', source_ids=['S1']
+            )
+        response = self.responses.pop(0)
+        if isinstance(response, Exception):
+            raise response
+        return response
+
+
+@pytest.fixture(autouse=True)
+def llm(monkeypatch: pytest.MonkeyPatch) -> FakeLLM:
+    fake = FakeLLM()
+    monkeypatch.setattr(chat_service, 'generate_grounded_answer', fake)
+    monkeypatch.setattr(chat_service, 'chat_client', fake_embedding_client)
     return fake
 
 
