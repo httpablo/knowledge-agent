@@ -273,15 +273,10 @@ async def fail_pending_document(
         await _discard_stored_file(session, storage, document_id, storage_key)
 
 
-async def _fail(
-    session: AsyncSession,
-    document_id: UUID,
-    error: str,
-    *conditions: ColumnElement[bool],
-) -> None:
+async def _fail(session: AsyncSession, document_id: UUID, error: str) -> None:
     async with session.begin():
         await session.execute(
             update(Document)
-            .where(Document.id == document_id, *conditions)
+            .where(Document.id == document_id)
             .values(status=DocumentStatus.FAILED, processing_error=error)
         )

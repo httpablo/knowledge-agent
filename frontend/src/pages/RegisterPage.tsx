@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { register } from '../api/auth'
 import { ApiError } from '../api/client'
+import type { Translation } from '../i18n/en'
 import ErrorMessage from '../components/ErrorMessage'
 import SubmitButton from '../components/SubmitButton'
 import TextField from '../components/TextField'
@@ -15,7 +16,7 @@ const PASSWORD_MIN_LENGTH = 8
 const PASSWORD_MAX_LENGTH = 128
 const NAME_MAX_LENGTH = 255
 
-function registrationErrorKey(error: unknown): string {
+function registrationErrorKey(error: unknown): keyof Translation {
   if (error instanceof ApiError) {
     if (error.status === 409) {
       return 'emailAlreadyExists'
@@ -38,10 +39,10 @@ function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [errorKey, setErrorKey] = useState<string | null>(null)
+  const [errorKey, setErrorKey] = useState<keyof Translation | null>(null)
   const inFlight = useRef(false)
 
-  function fail(key: string) {
+  function fail(key: keyof Translation) {
     setErrorKey(key)
     setSubmitting(false)
     inFlight.current = false

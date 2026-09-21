@@ -28,6 +28,10 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+
   :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;

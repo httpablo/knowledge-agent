@@ -5,13 +5,14 @@ import { useNavigate } from 'react-router-dom'
 
 import { login } from '../api/auth'
 import { ApiError } from '../api/client'
+import type { Translation } from '../i18n/en'
 import ErrorMessage from '../components/ErrorMessage'
 import SubmitButton from '../components/SubmitButton'
 import TextField from '../components/TextField'
 import TextLink from '../components/TextLink'
 import { useAuth } from '../context/useAuth'
 
-function messageKeyFor(error: unknown): string {
+function messageKeyFor(error: unknown): keyof Translation {
   if (error instanceof ApiError) {
     if (error.status === 401) {
       return 'invalidCredentials'
@@ -33,7 +34,7 @@ function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [errorKey, setErrorKey] = useState<string | null>(null)
+  const [errorKey, setErrorKey] = useState<keyof Translation | null>(null)
   const inFlight = useRef(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 
-import { useAuth } from '../context/useAuth'
-import CenteredPanel from './CenteredPanel'
-import ErrorMessage from './ErrorMessage'
+import { useAuth } from '../../context/useAuth'
+import CenteredPanel from '../CenteredPanel'
+import ErrorMessage from '../ErrorMessage'
 
 function SessionStatus({ status }: { status: 'checking' | 'error' }) {
   const { t } = useTranslation()

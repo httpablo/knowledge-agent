@@ -16,7 +16,7 @@ function WorkspacePage() {
     return null
   }
 
-  const context = `${auth.organization.name} · ${t('signedInAs', { name: auth.user.name })}`
+  const accountSummary = `${auth.organization.name} · ${t('signedInAs', { name: auth.user.name })}`
 
   return (
     <div className="flex min-h-dvh flex-col lg:h-dvh">
@@ -25,7 +25,7 @@ function WorkspacePage() {
           <h1 className="text-sm font-semibold tracking-tight text-primary">
             Knowledge Agent
           </h1>
-          <p className="text-sm wrap-anywhere sm:truncate" title={context}>
+          <p className="text-sm wrap-anywhere sm:truncate" title={accountSummary}>
             <span className="font-medium">{auth.organization.name}</span>
             <span className="text-muted-foreground">
               {' · '}
