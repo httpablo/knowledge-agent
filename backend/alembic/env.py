@@ -1,13 +1,23 @@
 import asyncio
 from logging.config import fileConfig
 
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-from core.settings import settings
 from models import Base
+
+
+class MigrationSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file='.env', env_file_encoding='utf-8', extra='ignore'
+    )
+
+    DATABASE_URL: SecretStr
+
 
 config = context.config
 
@@ -16,7 +26,7 @@ if config.config_file_name is not None:
 
 config.set_main_option(
     'sqlalchemy.url',
-    settings.DATABASE_URL.get_secret_value().replace('%', '%%'),
+    MigrationSettings().DATABASE_URL.get_secret_value().replace('%', '%%'),
 )
 
 target_metadata = Base.metadata

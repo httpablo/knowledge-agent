@@ -1,3 +1,20 @@
+x-database-url: &database-url postgresql+asyncpg://app:app@db:5432/knowledge_agent
+
+x-backend: &backend
+  image: knowledge-agent-backend:local
+
+x-app-runtime: &app-runtime
+  env_file:
+    - path: ./backend/.env
+      required: false
+  environment:
+    DATABASE_URL: *database-url
+    REDIS_URL: redis://redis:6379/0
+    STORAGE_ENDPOINT_URL: http://minio:9000
+    STORAGE_ACCESS_KEY: minioadmin
+    STORAGE_SECRET_KEY: minioadmin
+    STORAGE_AUTO_CREATE_BUCKET: 'true'
+
 services:
   db:
     image: pgvector/pgvector:0.8.6-pg17
@@ -41,6 +58,46 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  migrate:
+    <<: *backend
+    build: ./backend
+    command: ['alembic', 'upgrade', 'head']
+    restart: 'no'
+    environment:
+      DATABASE_URL: *database-url
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: [*backend, *app-runtime]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  worker:
+    <<: [*backend, *app-runtime]
+    command: ['celery', '-A', 'tasks.celery_app', 'worker', '--loglevel=info']
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  frontend:
+    image: knowledge-agent-frontend:local
+    build: ./frontend
+    ports:
+      - '3000:80'
+    depends_on:
+      - api
 
 volumes:
   postgres_data:
