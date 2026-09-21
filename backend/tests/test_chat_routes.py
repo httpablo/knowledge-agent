@@ -1,13 +1,21 @@
 from http import HTTPStatus
 from uuid import UUID, uuid4
 
-from httpx import AsyncClient
+import pytest
+from httpx import AsyncClient, Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Conversation, Message, MessageRole
-from services.llm_client import GroundedAnswer, TransientLLMError
-from tests.conftest import FakeLLM, MakeUser, RegisteredUser, make_document
+from services.embeddings import EmbeddingError, TransientEmbeddingError
+from services.llm_client import GroundedAnswer, LLMError, TransientLLMError
+from tests.conftest import (
+    FakeEmbeddings,
+    FakeLLM,
+    MakeUser,
+    RegisteredUser,
+    make_document,
+)
 
 QUESTION = 'Quantos dias de férias por ano?'
 CHUNK = 'Cada colaborador tem 30 dias de férias por ano.'
@@ -129,6 +137,73 @@ async def test_model_failure_returns_503_without_persisting_an_answer(
         conversation_id = await session.scalar(select(Conversation.id))
     messages = await _messages(session, conversation_id)
     assert [message.role for message in messages] == [MessageRole.USER]
+
+
+async def _assert_unavailable_without_answer(
+    response: Response, session: AsyncSession, secret: str
+) -> None:
+    assert response.status_code == HTTPStatus.SERVICE_UNAVAILABLE
+    assert response.json() == {
+        'detail': 'The assistant is temporarily unavailable'
+    }
+    assert secret not in response.text
+    async with session.begin():
+        conversation_id = await session.scalar(select(Conversation.id))
+    messages = await _messages(session, conversation_id)
+    assert [message.role for message in messages] == [MessageRole.USER]
+
+
+@pytest.mark.parametrize('error', [EmbeddingError, TransientEmbeddingError])
+async def test_embedding_failure_returns_503_without_persisting_an_answer(
+    client: AsyncClient,
+    session: AsyncSession,
+    user: RegisteredUser,
+    embeddings: FakeEmbeddings,
+    llm: FakeLLM,
+    error: type[EmbeddingError],
+) -> None:
+    await make_document(session, user.organization_id, 'policy.pdf', [CHUNK])
+    embeddings.error = error('provider said sk-secret-key is invalid')
+
+    response = await client.post(
+        '/api/v1/chat', headers=user.headers, json={'question': QUESTION}
+    )
+
+    await _assert_unavailable_without_answer(response, session, 'sk-secret')
+    assert llm.calls == []
+
+
+async def test_base_llm_failure_returns_503_without_persisting_an_answer(
+    client: AsyncClient,
+    session: AsyncSession,
+    user: RegisteredUser,
+    llm: FakeLLM,
+) -> None:
+    await make_document(session, user.organization_id, 'policy.pdf', [CHUNK])
+    llm.answers(LLMError('provider said sk-secret-key is invalid'))
+
+    response = await client.post(
+        '/api/v1/chat', headers=user.headers, json={'question': QUESTION}
+    )
+
+    await _assert_unavailable_without_answer(response, session, 'sk-secret')
+
+
+async def test_question_without_context_is_not_an_unavailable_error(
+    client: AsyncClient,
+    session: AsyncSession,
+    user: RegisteredUser,
+    llm: FakeLLM,
+) -> None:
+    response = await client.post(
+        '/api/v1/chat', headers=user.headers, json={'question': QUESTION}
+    )
+
+    assert response.status_code == HTTPStatus.OK
+    body = response.json()
+    assert body['answerable'] is False
+    assert body['sources'] == []
+    assert llm.calls == []
 
 
 async def test_chat_rejects_a_conversation_from_another_organization(

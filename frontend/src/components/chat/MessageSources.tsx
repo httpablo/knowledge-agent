@@ -16,7 +16,7 @@ function MessageSources({ sources }: { sources: ChatSource[] }) {
         {sources.map((source) => (
           <li key={source.chunk_id}>
             <details className="rounded-lg border border-border bg-surface">
-              <summary className="cursor-pointer rounded-lg px-3 py-2 text-meta wrap-anywhere marker:text-muted-foreground hover:bg-background">
+              <summary className="cursor-pointer rounded-lg px-3 py-2.5 text-meta sm:py-2 wrap-anywhere marker:text-muted-foreground hover:bg-background">
                 <span className="font-medium">{source.filename}</span>
                 {source.page_number !== null && (
                   <span className="text-muted-foreground">

@@ -6,6 +6,7 @@ from core.database import SessionDep
 from core.dependencies import Auth
 from schemas.chat import ChatRequest, ChatResponse, MessageResponse
 from services import chat as chat_service
+from services.embeddings import EmbeddingError
 from services.llm_client import LLMError
 
 router = APIRouter(prefix='/chat', tags=['chat'])
@@ -34,7 +35,7 @@ async def ask(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=CONVERSATION_NOT_FOUND,
         ) from exc
-    except LLMError as exc:
+    except (EmbeddingError, LLMError) as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=ASSISTANT_UNAVAILABLE,

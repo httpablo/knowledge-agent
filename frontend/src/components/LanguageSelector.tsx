@@ -19,7 +19,7 @@ function LanguageSelector() {
         onChange={(event) => {
           void i18n.changeLanguage(event.target.value)
         }}
-        className="cursor-pointer rounded-md border border-border bg-surface py-1.5 pr-2 pl-2.5 text-sm hover:border-muted-foreground"
+        className="cursor-pointer rounded-md border border-border bg-surface py-2 pr-2 pl-2.5 text-sm hover:border-muted-foreground sm:py-1.5"
       >
         {LANGUAGES.map((language) => (
           <option key={language} value={language}>
