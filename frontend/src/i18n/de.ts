@@ -53,7 +53,18 @@ const de: Translation = {
     'Diese Datei konnte nicht verarbeitet werden. Prüfen Sie das Format und versuchen Sie es erneut.',
   documentUploadUnavailable:
     'Die Datei konnte gerade nicht hochgeladen werden. Versuchen Sie es erneut.',
-  chatNotConnected: 'Der Assistent ist noch nicht verbunden.',
+  askYourDocuments: 'Stellen Sie eine Frage zu Ihren Dokumenten.',
+  questionLabel: 'Ihre Frage',
+  send: 'Senden',
+  sending: 'Wird gesendet…',
+  answerNotFound:
+    'Ich konnte diese Information in Ihren Dokumenten nicht finden.',
+  chatUnavailable:
+    'Derzeit konnte keine Antwort erzeugt werden. Versuchen Sie es erneut.',
+  invalidQuestion:
+    'Diese Frage ist ungültig. Prüfen Sie sie und versuchen Sie es erneut.',
+  you: 'Sie',
+  assistant: 'Assistent',
 }
 
 export default de

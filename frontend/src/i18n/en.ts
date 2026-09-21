@@ -47,7 +47,15 @@ const en = {
     'This file could not be processed. Check the format and try again.',
   documentUploadUnavailable:
     'We couldn’t upload this file right now. Please try again.',
-  chatNotConnected: 'The assistant is not connected yet.',
+  askYourDocuments: 'Ask a question about your documents.',
+  questionLabel: 'Your question',
+  send: 'Send',
+  sending: 'Sending…',
+  answerNotFound: 'I couldn’t find that in your documents.',
+  chatUnavailable: 'We couldn’t get an answer right now. Please try again.',
+  invalidQuestion: 'This question isn’t valid. Please check it and try again.',
+  you: 'You',
+  assistant: 'Assistant',
 }
 
 export type Translation = typeof en

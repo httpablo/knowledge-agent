@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
+import ChatPanel from '../components/chat/ChatPanel'
 import DocumentsPanel from '../components/documents/DocumentsPanel'
 import LanguageSelector from '../components/LanguageSelector'
 import { useAuth } from '../context/useAuth'
@@ -41,11 +42,11 @@ function WorkspacePage() {
           <DocumentsPanel token={auth.token} />
         </section>
 
-        <section className={`${PANEL_CLASS} lg:flex-1`}>
+        <section
+          className={`${PANEL_CLASS} h-[36rem] lg:h-[calc(100vh-8.75rem)] lg:min-h-[30rem] lg:flex-1`}
+        >
           <h2 className="font-medium">{t('chat')}</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {t('chatNotConnected')}
-          </p>
+          <ChatPanel token={auth.token} />
         </section>
       </main>
     </div>

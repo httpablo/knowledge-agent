@@ -47,7 +47,16 @@ const pt: Translation = {
     'Não foi possível processar este arquivo. Verifique o formato e tente novamente.',
   documentUploadUnavailable:
     'Não foi possível enviar este arquivo agora. Tente novamente.',
-  chatNotConnected: 'O assistente ainda não está conectado.',
+  askYourDocuments: 'Faça uma pergunta sobre seus documentos.',
+  questionLabel: 'Sua pergunta',
+  send: 'Enviar',
+  sending: 'Enviando…',
+  answerNotFound: 'Não encontrei essa informação nos seus documentos.',
+  chatUnavailable:
+    'Não foi possível obter uma resposta agora. Tente novamente.',
+  invalidQuestion: 'Esta pergunta não é válida. Verifique e tente novamente.',
+  you: 'Você',
+  assistant: 'Assistente',
 }
 
 export default pt
