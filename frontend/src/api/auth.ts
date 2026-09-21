@@ -21,6 +21,12 @@ export type LoginCredentials = {
   password: string
 }
 
+export type RegisterData = {
+  name: string
+  email: string
+  password: string
+}
+
 export type TokenResponse = {
   access_token: string
   token_type: string
@@ -32,6 +38,13 @@ export function login(
   return apiRequest<TokenResponse>('/api/v1/auth/login', {
     method: 'POST',
     json: credentials,
+  })
+}
+
+export function register(data: RegisterData): Promise<TokenResponse> {
+  return apiRequest<TokenResponse>('/api/v1/auth/register', {
+    method: 'POST',
+    json: data,
   })
 }
 

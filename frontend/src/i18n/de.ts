@@ -1,7 +1,6 @@
 import type { Translation } from './en'
 
 const de: Translation = {
-  tagline: 'Stellen Sie Fragen zu Ihren Dokumenten.',
   languageLabel: 'Sprache',
   signIn: 'Anmelden',
   createAccount: 'Konto erstellen',
@@ -14,6 +13,24 @@ const de: Translation = {
   invalidInput: 'Bitte überprüfen Sie Ihre Eingaben.',
   signInUnavailable:
     'Die Anmeldung ist derzeit nicht möglich. Versuchen Sie es erneut.',
+  name: 'Name',
+  creatingAccount: 'Konto wird erstellt…',
+  emailAlreadyExists:
+    'Für diese E-Mail-Adresse existiert bereits ein Konto.',
+  invalidRegistrationInput: 'Bitte überprüfen Sie Ihre Eingaben.',
+  registrationUnavailable:
+    'Das Konto konnte derzeit nicht erstellt werden. Versuchen Sie es erneut.',
+  accountCreatedSessionFailed:
+    'Ihr Konto wurde erstellt, aber die Sitzung konnte nicht gestartet werden. Bitte melden Sie sich an.',
+  checkingSession: 'Sitzung wird überprüft…',
+  sessionUnavailable:
+    'Ihre Sitzung konnte nicht überprüft werden. Versuchen Sie es erneut.',
+  signedInAs: 'Angemeldet als {{name}}',
+  logout: 'Abmelden',
+  documents: 'Dokumente',
+  chat: 'Chat',
+  documentsNotConnected: 'Der Dokumenten-Upload ist noch nicht verbunden.',
+  chatNotConnected: 'Der Assistent ist noch nicht verbunden.',
 }
 
 export default de
