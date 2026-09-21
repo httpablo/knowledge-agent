@@ -5,7 +5,7 @@ function TextLink({ to, children }: { to: string; children: ReactNode }) {
   return (
     <Link
       to={to}
-      className="rounded-sm text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      className="rounded-sm text-sm font-medium text-primary underline-offset-4 hover:underline"
     >
       {children}
     </Link>

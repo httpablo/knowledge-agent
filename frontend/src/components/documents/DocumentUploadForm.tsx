@@ -126,7 +126,7 @@ function DocumentUploadForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-3 space-y-3 rounded-lg border border-border bg-background p-3"
+      className="shrink-0 space-y-3 rounded-lg border border-border bg-surface p-3.5"
     >
       <div className="flex flex-col gap-1.5">
         <label htmlFor="document-file" className="text-sm font-medium">
@@ -139,15 +139,15 @@ function DocumentUploadForm({
           accept={ALLOWED_EXTENSIONS.join(',')}
           aria-describedby="document-file-hint"
           onChange={handleChange}
-          className="w-full min-w-0 text-sm file:mr-3 file:rounded-md file:border file:border-border file:bg-surface file:px-3 file:py-2 file:text-sm file:font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="w-full min-w-0 cursor-pointer text-sm text-muted-foreground file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-primary-subtle file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary hover:file:bg-primary-border"
         />
-        <p id="document-file-hint" className="text-xs text-muted-foreground">
+        <p id="document-file-hint" className="text-meta text-muted-foreground">
           {t('supportedDocumentFormats', { size: MAX_UPLOAD_SIZE_MB })}
         </p>
       </div>
 
       {file && (
-        <p className="text-sm wrap-anywhere">
+        <p className="text-meta wrap-anywhere">
           {t('selectedFile', { name: file.name })}
         </p>
       )}
@@ -158,7 +158,10 @@ function DocumentUploadForm({
         </ErrorMessage>
       )}
       {feedback?.kind === 'success' && (
-        <p role="status" className="text-sm text-success">
+        <p
+          role="status"
+          className="rounded-md bg-success-subtle px-3 py-2 text-sm text-success"
+        >
           {t('uploadAccepted')}
         </p>
       )}

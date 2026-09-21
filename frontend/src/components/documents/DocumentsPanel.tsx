@@ -29,10 +29,10 @@ const STATUS_LABEL_KEYS: Record<DocumentStatus, keyof Translation> = {
 }
 
 const STATUS_BADGE_CLASSES: Record<DocumentStatus, string> = {
-  PENDING: 'border-border text-muted-foreground',
-  PROCESSING: 'border-warning text-warning',
-  READY: 'border-success text-success',
-  FAILED: 'border-destructive text-destructive',
+  PENDING: 'border-border bg-background text-muted-foreground',
+  PROCESSING: 'border-warning/40 bg-warning-subtle text-warning',
+  READY: 'border-success/40 bg-success-subtle text-success',
+  FAILED: 'border-destructive/40 bg-destructive-subtle text-destructive',
 }
 
 function isActive(status: DocumentStatus): boolean {
@@ -67,7 +67,7 @@ function TryAgainButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
+      className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-medium enabled:hover:bg-background disabled:cursor-not-allowed disabled:text-muted-foreground"
     >
       {t('tryAgain')}
     </button>
@@ -84,25 +84,25 @@ function DocumentItem({
   const { t } = useTranslation()
 
   return (
-    <li className="rounded-lg border border-border px-3 py-2.5">
-      <div className="flex items-start justify-between gap-2">
-        <span className="min-w-0 flex-1 text-sm font-medium wrap-anywhere">
+    <li className="rounded-lg border border-border bg-surface px-3 py-2.5">
+      <div className="flex items-start justify-between gap-3">
+        <span className="min-w-0 flex-1 text-sm leading-snug font-medium wrap-anywhere">
           {document.filename}
         </span>
         <span
-          className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium ${STATUS_BADGE_CLASSES[document.status]}`}
+          className={`shrink-0 rounded-full border px-2.5 py-1 text-meta leading-none font-medium ${STATUS_BADGE_CLASSES[document.status]}`}
         >
           {t(STATUS_LABEL_KEYS[document.status])}
         </span>
       </div>
       <time
         dateTime={document.created_at}
-        className="mt-1 block text-xs text-muted-foreground"
+        className="mt-1 block text-meta text-muted-foreground"
       >
         {formatDate(document.created_at)}
       </time>
       {document.status === 'FAILED' && document.processing_error && (
-        <p className="mt-2 text-sm text-destructive wrap-anywhere">
+        <p className="mt-2 rounded-md bg-destructive-subtle px-2.5 py-1.5 text-meta text-destructive wrap-anywhere">
           {document.processing_error}
         </p>
       )}
@@ -234,7 +234,7 @@ function DocumentsPanel({ token }: { token: string }) {
   function renderList() {
     if (state.status === 'loading') {
       return (
-        <p role="status" className="text-sm text-muted-foreground">
+        <p role="status" className="py-8 text-center text-sm text-muted-foreground">
           {t('loadingDocuments')}
         </p>
       )
@@ -251,14 +251,16 @@ function DocumentsPanel({ token }: { token: string }) {
 
     if (state.documents.length === 0) {
       return (
-        <p className="text-sm text-muted-foreground">{t('noDocuments')}</p>
+        <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+          {t('noDocuments')}
+        </p>
       )
     }
 
     return (
       <>
         {state.refresh !== 'ok' && (
-          <div className="mb-3 flex flex-col items-start gap-3">
+          <div className="mb-3 flex shrink-0 flex-col items-start gap-3">
             <ErrorMessage>{t('documentsRefreshError')}</ErrorMessage>
             <TryAgainButton
               onClick={retryRefresh}
@@ -268,7 +270,7 @@ function DocumentsPanel({ token }: { token: string }) {
         )}
         <ul
           aria-label={t('documents')}
-          className="flex flex-col gap-2 lg:max-h-[70vh] lg:overflow-y-auto"
+          className="flex max-h-80 min-h-0 flex-col gap-2 overflow-y-auto lg:max-h-none lg:flex-1"
         >
           {state.documents.map((document) => (
             <DocumentItem
@@ -310,7 +312,9 @@ function DocumentsPanel({ token }: { token: string }) {
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>
-      <div className="mt-4">{renderList()}</div>
+      <div className="mt-4 flex min-h-0 flex-col lg:flex-1">
+        {renderList()}
+      </div>
     </>
   )
 }

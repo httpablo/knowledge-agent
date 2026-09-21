@@ -48,6 +48,7 @@ const en = {
   documentUploadUnavailable:
     'We couldn’t upload this file right now. Please try again.',
   askYourDocuments: 'Ask a question about your documents.',
+  askYourDocumentsHint: 'Answers include the sources they were based on.',
   questionLabel: 'Your question',
   send: 'Send',
   sending: 'Sending…',

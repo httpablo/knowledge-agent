@@ -4,16 +4,32 @@
   --color-background: #f6f8fb;
   --color-surface: #ffffff;
   --color-foreground: #1e293b;
-  --color-muted-foreground: #64748b;
+  --color-muted-foreground: #55657b;
   --color-border: #e2e8f0;
   --color-primary: #4f46e5;
+  --color-primary-hover: #4338ca;
   --color-primary-foreground: #ffffff;
+  --color-primary-subtle: #eef2ff;
+  --color-primary-border: #c7d2fe;
   --color-destructive: #b91c1c;
+  --color-destructive-subtle: #fef2f2;
   --color-success: #15803d;
+  --color-success-subtle: #f0fdf4;
   --color-warning: #b45309;
+  --color-warning-subtle: #fffbeb;
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.25rem;
 }
 
-body {
-  background-color: var(--color-background);
-  color: var(--color-foreground);
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
 }

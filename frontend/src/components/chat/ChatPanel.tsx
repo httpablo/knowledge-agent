@@ -38,27 +38,33 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
   return (
     <li
-      className={`max-w-[85%] rounded-xl border px-3 py-2 ${
-        isUser
-          ? 'self-end border-indigo-200 bg-indigo-50'
-          : 'self-start border-border bg-surface'
+      className={`flex max-w-[90%] flex-col gap-1 sm:max-w-[85%] ${
+        isUser ? 'items-end self-end' : 'items-start self-start'
       }`}
     >
-      <p className="mb-0.5 text-xs font-medium text-muted-foreground">
+      <p className="text-meta font-medium text-muted-foreground">
         {isUser ? t('you') : t('assistant')}
       </p>
-      <p
-        className={`text-sm whitespace-pre-wrap wrap-anywhere ${
-          notFound ? 'text-muted-foreground' : ''
+      <div
+        className={`rounded-2xl border px-4 py-2.5 ${
+          isUser
+            ? 'rounded-tr-md border-primary-border bg-primary-subtle'
+            : 'rounded-tl-md border-border bg-background'
         }`}
       >
-        {notFound ? t('answerNotFound') : message.content}
-      </p>
-      {message.role === 'assistant' &&
-        message.answerable &&
-        message.sources.length > 0 && (
-          <MessageSources sources={message.sources} />
-        )}
+        <p
+          className={`text-[0.9375rem] leading-relaxed whitespace-pre-wrap wrap-anywhere ${
+            notFound ? 'text-muted-foreground' : ''
+          }`}
+        >
+          {notFound ? t('answerNotFound') : message.content}
+        </p>
+        {message.role === 'assistant' &&
+          message.answerable &&
+          message.sources.length > 0 && (
+            <MessageSources sources={message.sources} />
+          )}
+      </div>
     </li>
   )
 }
@@ -158,46 +164,59 @@ function ChatPanel({ token }: { token: string }) {
   }
 
   return (
-    <div className="mt-3 flex min-h-0 flex-1 flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div
         ref={messageList}
         role="log"
         aria-label={t('chat')}
-        className="min-h-0 flex-1 overflow-y-auto"
+        className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6"
       >
-        {messages.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {t('askYourDocuments')}
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
-            ))}
-          </ul>
-        )}
+        <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col">
+          {messages.length === 0 ? (
+            <div className="my-auto py-8 text-center">
+              <p className="font-medium">{t('askYourDocuments')}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t('askYourDocumentsHint')}
+              </p>
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-5">
+              {messages.map((message) => (
+                <MessageBubble key={message.id} message={message} />
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
-      {errorKey && <ErrorMessage>{t(errorKey)}</ErrorMessage>}
+      <div className="shrink-0 border-t border-border bg-surface px-4 py-3 sm:px-6">
+        <div className="mx-auto w-full max-w-3xl space-y-2">
+          {errorKey && <ErrorMessage>{t(errorKey)}</ErrorMessage>}
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-2">
-        <label htmlFor="chat-question" className="sr-only">
-          {t('questionLabel')}
-        </label>
-        <textarea
-          id="chat-question"
-          required
-          rows={3}
-          maxLength={MAX_QUESTION_LENGTH}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={handleKeyDown}
-          className="w-full resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        />
-        <SubmitButton disabled={sending || !draft.trim()}>
-          {sending ? t('sending') : t('send')}
-        </SubmitButton>
-      </form>
+          <form
+            onSubmit={handleSubmit}
+            noValidate
+            className="flex items-end gap-2"
+          >
+            <label htmlFor="chat-question" className="sr-only">
+              {t('questionLabel')}
+            </label>
+            <textarea
+              id="chat-question"
+              required
+              rows={2}
+              maxLength={MAX_QUESTION_LENGTH}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={handleKeyDown}
+              className="max-h-40 min-h-[3.25rem] w-full min-w-0 flex-1 resize-none rounded-lg border border-border bg-surface px-3 py-2.5 text-base leading-snug hover:border-muted-foreground sm:text-[0.9375rem]"
+            />
+            <SubmitButton disabled={sending || !draft.trim()} fullWidth={false}>
+              {sending ? t('sending') : t('send')}
+            </SubmitButton>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }

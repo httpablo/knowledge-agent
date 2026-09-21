@@ -54,6 +54,8 @@ const de: Translation = {
   documentUploadUnavailable:
     'Die Datei konnte gerade nicht hochgeladen werden. Versuchen Sie es erneut.',
   askYourDocuments: 'Stellen Sie eine Frage zu Ihren Dokumenten.',
+  askYourDocumentsHint:
+    'Antworten enthalten die Quellen, auf denen sie beruhen.',
   questionLabel: 'Ihre Frage',
   send: 'Senden',
   sending: 'Wird gesendet…',

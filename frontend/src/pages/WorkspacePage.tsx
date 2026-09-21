@@ -5,8 +5,8 @@ import DocumentsPanel from '../components/documents/DocumentsPanel'
 import LanguageSelector from '../components/LanguageSelector'
 import { useAuth } from '../context/useAuth'
 
-const PANEL_CLASS =
-  'flex min-h-0 flex-col rounded-xl border border-border bg-surface p-4 sm:p-6'
+const PANEL_TITLE_CLASS =
+  'shrink-0 border-b border-border px-4 py-3 text-sm font-semibold tracking-tight sm:px-6'
 
 function WorkspacePage() {
   const { t } = useTranslation()
@@ -16,36 +16,43 @@ function WorkspacePage() {
     return null
   }
 
+  const context = `${auth.organization.name} · ${t('signedInAs', { name: auth.user.name })}`
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-border bg-surface px-4 py-3 sm:px-6">
-        <div className="mr-auto">
-          <h1 className="font-semibold tracking-tight">Knowledge Agent</h1>
-          <p className="text-sm text-muted-foreground">
-            {auth.organization.name} ·{' '}
-            {t('signedInAs', { name: auth.user.name })}
+    <div className="flex min-h-dvh flex-col lg:h-dvh">
+      <header className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-3 border-b border-border bg-surface px-4 py-3 sm:px-6">
+        <div className="min-w-0 flex-1 basis-56">
+          <h1 className="text-sm font-semibold tracking-tight text-primary">
+            Knowledge Agent
+          </h1>
+          <p className="text-sm wrap-anywhere sm:truncate" title={context}>
+            <span className="font-medium">{auth.organization.name}</span>
+            <span className="text-muted-foreground">
+              {' · '}
+              {t('signedInAs', { name: auth.user.name })}
+            </span>
           </p>
         </div>
         <LanguageSelector />
         <button
           type="button"
           onClick={auth.logout}
-          className="rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium hover:bg-background"
         >
           {t('logout')}
         </button>
       </header>
 
-      <main className="flex min-h-0 flex-1 flex-col gap-4 p-4 sm:p-6 lg:flex-row">
-        <section className={`${PANEL_CLASS} lg:basis-[35%]`}>
-          <h2 className="font-medium">{t('documents')}</h2>
-          <DocumentsPanel token={auth.token} />
+      <main className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        <section className="flex min-h-0 flex-col border-b border-border bg-background lg:w-[35%] lg:max-w-[30rem] lg:min-w-[22rem] lg:shrink-0 lg:border-r lg:border-b-0">
+          <h2 className={PANEL_TITLE_CLASS}>{t('documents')}</h2>
+          <div className="flex min-h-0 flex-1 flex-col px-4 py-4 sm:px-6 lg:px-5">
+            <DocumentsPanel token={auth.token} />
+          </div>
         </section>
 
-        <section
-          className={`${PANEL_CLASS} h-[36rem] lg:h-[calc(100vh-8.75rem)] lg:min-h-[30rem] lg:flex-1`}
-        >
-          <h2 className="font-medium">{t('chat')}</h2>
+        <section className="flex h-[70dvh] min-h-[26rem] min-w-0 flex-col bg-surface lg:h-auto lg:min-h-0 lg:flex-1">
+          <h2 className={PANEL_TITLE_CLASS}>{t('chat')}</h2>
           <ChatPanel token={auth.token} />
         </section>
       </main>

@@ -48,6 +48,7 @@ const pt: Translation = {
   documentUploadUnavailable:
     'Não foi possível enviar este arquivo agora. Tente novamente.',
   askYourDocuments: 'Faça uma pergunta sobre seus documentos.',
+  askYourDocumentsHint: 'As respostas incluem as fontes em que se basearam.',
   questionLabel: 'Sua pergunta',
   send: 'Enviar',
   sending: 'Enviando…',
