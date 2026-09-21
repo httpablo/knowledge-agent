@@ -264,3 +264,34 @@ async def test_history_cannot_forge_source_blocks(
 
     assert llm.prompt.count('</history>') == 1
     assert '<source id="S9">' not in llm.prompt
+
+
+async def test_english_follow_up_after_portuguese_history_stays_separate(
+    session: AsyncSession, user: RegisteredUser, llm: FakeLLM
+) -> None:
+    follow_up = 'And how many days in advance must it be requested?'
+    await make_document(
+        session,
+        user.organization_id,
+        'policy.pdf',
+        [CHUNK, 'A vacation request must be made 45 days in advance.'],
+    )
+    conversation = await _conversation(session, user)
+    await _add_messages(
+        session,
+        conversation.id,
+        [
+            (MessageRole.USER, QUESTION),
+            (MessageRole.ASSISTANT, 'São 30 dias por ano.'),
+        ],
+    )
+
+    await chat.answer_in_conversation(
+        session, user.organization_id, user.id, follow_up, conversation.id
+    )
+
+    history = _history_block(llm.prompt)
+    assert 'São 30 dias por ano.' in history
+    assert follow_up not in history
+    assert llm.prompt.rstrip().endswith(f'Question: {follow_up}')
+    assert 'language of the <history> block' in llm.system_prompt

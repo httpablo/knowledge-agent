@@ -162,6 +162,57 @@ async def test_answer_keeps_the_language_chosen_by_the_model(
     assert 'same language as the question' in chat.SYSTEM_PROMPT
 
 
+def _rule(system_prompt: str, keyword: str) -> str:
+    rules = system_prompt.split('Rules:\n', 1)[1].split('\n- ')
+    [rule] = [rule for rule in rules if keyword in rule]
+    return ' '.join(rule.split())
+
+
+async def test_system_prompt_sent_keeps_source_labels_out_of_the_answer(
+    session: AsyncSession, user: RegisteredUser, llm: FakeLLM
+) -> None:
+    await make_document(
+        session, user.organization_id, 'policy.pdf', [VACATION_CHUNK]
+    )
+    llm.answers(_grounded())
+
+    await chat.answer_question(
+        session, user.organization_id, VACATION_QUESTION
+    )
+
+    labels = _rule(llm.system_prompt, 'internal labels')
+    assert 'S1, S2' in labels
+    assert 'belong only to source_ids' in labels
+    assert 'Never write them in answer' in labels
+    assert 'source S1' in labels
+    ids_rule = _rule(llm.system_prompt, 'list in source_ids')
+    assert 'Never write' not in ids_rule
+    assert '<source id="S1">' in llm.prompt
+
+
+async def test_system_prompt_sent_ties_the_language_to_the_current_question(
+    session: AsyncSession, user: RegisteredUser, llm: FakeLLM
+) -> None:
+    await make_document(
+        session, user.organization_id, 'policy.pdf', [VACATION_CHUNK]
+    )
+    llm.answers(_grounded())
+
+    await chat.answer_question(
+        session, user.organization_id, VACATION_QUESTION
+    )
+
+    language = _rule(llm.system_prompt, 'same language as the question')
+    assert 'current one that follows "Question:"' in language
+    assert 'Only that language decides' in language
+    assert 'ignore the language of the <history> block' in language
+    assert 'and of the <source> blocks' in language
+    assert llm.prompt.rstrip().splitlines()[-1] == (
+        f'Question: {VACATION_QUESTION}'
+    )
+    assert 'not a language instruction' in llm.system_prompt
+
+
 @pytest.mark.parametrize(
     'invalid',
     [

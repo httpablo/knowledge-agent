@@ -131,6 +131,7 @@ def embeddings(monkeypatch: pytest.MonkeyPatch) -> FakeEmbeddings:
 class FakeLLM:
     def __init__(self) -> None:
         self.calls: list[str] = []
+        self.system_prompts: list[str] = []
         self.responses: list[GroundedAnswer | Exception] = []
 
     def answers(self, *responses: GroundedAnswer | Exception) -> None:
@@ -140,10 +141,15 @@ class FakeLLM:
     def prompt(self) -> str:
         return self.calls[-1]
 
+    @property
+    def system_prompt(self) -> str:
+        return self.system_prompts[-1]
+
     async def __call__(
         self, client: None, system_prompt: str, user_prompt: str
     ) -> GroundedAnswer:
         self.calls.append(user_prompt)
+        self.system_prompts.append(system_prompt)
         if not self.responses:
             return GroundedAnswer(
                 answerable=True, answer='An answer', source_ids=['S1']
