@@ -1,14 +1,15 @@
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { register } from '../api/auth'
 import { ApiError } from '../api/client'
+import ErrorMessage from '../components/ErrorMessage'
+import SubmitButton from '../components/SubmitButton'
+import TextField from '../components/TextField'
+import TextLink from '../components/TextLink'
 import { useAuth } from '../context/useAuth'
-
-const FIELD_CLASS =
-  'mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
 
 const PASSWORD_MIN_LENGTH = 8
 const PASSWORD_MAX_LENGTH = 128
@@ -21,7 +22,7 @@ function registrationErrorKey(error: unknown): string {
     }
 
     if (error.status === 422) {
-      return 'invalidRegistrationInput'
+      return 'invalidInput'
     }
   }
 
@@ -82,86 +83,50 @@ function RegisterPage() {
         {t('createAccount')}
       </h1>
 
-      <form onSubmit={handleSubmit} className="mt-6">
-        <div>
-          <label htmlFor="name" className="text-sm font-medium">
-            {t('name')}
-          </label>
-          <input
-            id="name"
-            type="text"
-            autoComplete="name"
-            required
-            maxLength={NAME_MAX_LENGTH}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            className={FIELD_CLASS}
-          />
-        </div>
+      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <TextField
+          id="name"
+          label={t('name')}
+          type="text"
+          autoComplete="name"
+          required
+          maxLength={NAME_MAX_LENGTH}
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+        />
 
-        <div className="mt-4">
-          <label htmlFor="email" className="text-sm font-medium">
-            {t('email')}
-          </label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className={FIELD_CLASS}
-          />
-        </div>
+        <TextField
+          id="email"
+          label={t('email')}
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+        />
 
-        <div className="mt-4">
-          <label htmlFor="password" className="text-sm font-medium">
-            {t('password')}
-          </label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={PASSWORD_MIN_LENGTH}
-            maxLength={PASSWORD_MAX_LENGTH}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className={FIELD_CLASS}
-          />
-        </div>
+        <TextField
+          id="password"
+          label={t('password')}
+          type="password"
+          autoComplete="new-password"
+          required
+          minLength={PASSWORD_MIN_LENGTH}
+          maxLength={PASSWORD_MAX_LENGTH}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
-        {errorKey && (
-          <p
-            role="alert"
-            className="mt-4 rounded-md border border-destructive px-3 py-2 text-sm text-destructive"
-          >
-            {t(errorKey)}
-          </p>
-        )}
+        {errorKey && <ErrorMessage>{t(errorKey)}</ErrorMessage>}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="mt-6 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <SubmitButton disabled={submitting}>
           {submitting ? t('creatingAccount') : t('createAccount')}
-        </button>
+        </SubmitButton>
       </form>
 
       <nav className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
-        <Link
-          to="/login"
-          className="rounded-sm text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          {t('signIn')}
-        </Link>
-        <Link
-          to="/"
-          className="rounded-sm text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          {t('home')}
-        </Link>
+        <TextLink to="/login">{t('signIn')}</TextLink>
+        <TextLink to="/">{t('home')}</TextLink>
       </nav>
     </>
   )

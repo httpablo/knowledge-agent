@@ -1,19 +1,19 @@
 import { useTranslation } from 'react-i18next'
 
+import CenteredPanel from './CenteredPanel'
+import ErrorMessage from './ErrorMessage'
+
 function SessionStatus({ status }: { status: 'checking' | 'error' }) {
   const { t } = useTranslation()
 
-  if (status === 'checking') {
-    return <p className="text-sm text-muted-foreground">{t('checkingSession')}</p>
-  }
-
   return (
-    <p
-      role="alert"
-      className="rounded-md border border-destructive px-3 py-2 text-sm text-destructive"
-    >
-      {t('sessionUnavailable')}
-    </p>
+    <CenteredPanel>
+      {status === 'checking' ? (
+        <p className="text-sm text-muted-foreground">{t('checkingSession')}</p>
+      ) : (
+        <ErrorMessage>{t('sessionUnavailable')}</ErrorMessage>
+      )}
+    </CenteredPanel>
   )
 }
 

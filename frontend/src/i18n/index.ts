@@ -9,8 +9,6 @@ export const LANGUAGES = ['en', 'pt', 'de'] as const
 
 export type Language = (typeof LANGUAGES)[number]
 
-// Endonyms: a language is always offered in its own name, so it stays
-// recognisable no matter which language is active.
 export const LANGUAGE_NAMES: Record<Language, string> = {
   en: 'English',
   pt: 'Português',
@@ -36,9 +34,7 @@ function readStoredLanguage(): Language {
 function storeLanguage(language: string): void {
   try {
     localStorage.setItem(STORAGE_KEY, language)
-  } catch {
-    // A rejected write only costs the preference, not the session.
-  }
+  } catch {}
 }
 
 void i18n.use(initReactI18next).init({

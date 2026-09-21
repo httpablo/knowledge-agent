@@ -1,29 +1,12 @@
-import { createContext, useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 
-import type { AuthenticatedUser, Organization } from '../api/auth'
 import { getMe } from '../api/auth'
 import { ApiError } from '../api/client'
+import { AuthContext } from './AuthContext'
+import type { AuthState } from './AuthContext'
 
 const TOKEN_KEY = 'knowledge-agent-access-token'
-
-export type AuthState =
-  | { status: 'checking' }
-  | { status: 'unauthenticated' }
-  | { status: 'error'; error: unknown }
-  | {
-      status: 'authenticated'
-      token: string
-      user: AuthenticatedUser
-      organization: Organization
-    }
-
-export type AuthContextValue = AuthState & {
-  establishSession: (accessToken: string) => Promise<void>
-  logout: () => void
-}
-
-export const AuthContext = createContext<AuthContextValue | null>(null)
 
 function readToken(): string | null {
   try {
@@ -36,26 +19,17 @@ function readToken(): string | null {
 function storeToken(token: string): void {
   try {
     localStorage.setItem(TOKEN_KEY, token)
-  } catch {
-    return
-  }
+  } catch {}
 }
 
 function clearToken(): void {
   try {
     localStorage.removeItem(TOKEN_KEY)
-  } catch {
-    return
-  }
+  } catch {}
 }
 
-function stateForFailure(error: unknown): AuthState {
-  if (error instanceof ApiError && error.status === 401) {
-    clearToken()
-    return { status: 'unauthenticated' }
-  }
-
-  return { status: 'error', error }
+function isExpiredSession(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 401
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -81,7 +55,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
 
-        setState(stateForFailure(error))
+        if (isExpiredSession(error)) {
+          clearToken()
+          setState({ status: 'unauthenticated' })
+          return
+        }
+
+        setState({ status: 'error', error })
       })
 
     return () => {
@@ -101,9 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ status: 'unauthenticated' })
   }, [])
 
-  return (
-    <AuthContext.Provider value={{ ...state, establishSession, logout }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ ...state, establishSession, logout }),
+    [state, establishSession, logout],
   )
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

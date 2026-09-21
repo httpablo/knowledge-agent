@@ -14,7 +14,6 @@ const pt: Translation = {
   name: 'Nome',
   creatingAccount: 'Criando conta…',
   emailAlreadyExists: 'Já existe uma conta com este e-mail.',
-  invalidRegistrationInput: 'Verifique as informações digitadas.',
   registrationUnavailable:
     'Não foi possível criar sua conta agora. Tente novamente.',
   accountCreatedSessionFailed:

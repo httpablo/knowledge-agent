@@ -1,4 +1,4 @@
-export type ApiRequestOptions = RequestInit & {
+type ApiRequestOptions = RequestInit & {
   token?: string
   json?: unknown
 }

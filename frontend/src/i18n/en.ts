@@ -13,7 +13,6 @@ const en = {
   name: 'Name',
   creatingAccount: 'Creating account…',
   emailAlreadyExists: 'An account with this email already exists.',
-  invalidRegistrationInput: 'Please check the information you entered.',
   registrationUnavailable:
     'We couldn’t create your account right now. Please try again.',
   accountCreatedSessionFailed:

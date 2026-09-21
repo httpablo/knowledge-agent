@@ -17,7 +17,6 @@ const de: Translation = {
   creatingAccount: 'Konto wird erstellt…',
   emailAlreadyExists:
     'Für diese E-Mail-Adresse existiert bereits ein Konto.',
-  invalidRegistrationInput: 'Bitte überprüfen Sie Ihre Eingaben.',
   registrationUnavailable:
     'Das Konto konnte derzeit nicht erstellt werden. Versuchen Sie es erneut.',
   accountCreatedSessionFailed:
