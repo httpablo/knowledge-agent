@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
+import DocumentsPanel from '../components/documents/DocumentsPanel'
 import LanguageSelector from '../components/LanguageSelector'
 import { useAuth } from '../context/useAuth'
 
@@ -37,9 +38,7 @@ function WorkspacePage() {
       <main className="flex min-h-0 flex-1 flex-col gap-4 p-4 sm:p-6 lg:flex-row">
         <section className={`${PANEL_CLASS} lg:basis-[35%]`}>
           <h2 className="font-medium">{t('documents')}</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {t('documentsNotConnected')}
-          </p>
+          <DocumentsPanel token={auth.token} />
         </section>
 
         <section className={`${PANEL_CLASS} lg:flex-1`}>

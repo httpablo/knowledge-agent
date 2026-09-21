@@ -24,7 +24,29 @@ const en = {
   logout: 'Log out',
   documents: 'Documents',
   chat: 'Chat',
-  documentsNotConnected: 'Document upload is not connected yet.',
+  loadingDocuments: 'Loading documents…',
+  noDocuments: 'No documents yet.',
+  documentsLoadError: 'We couldn’t load your documents.',
+  tryAgain: 'Try again',
+  documentsRefreshError: 'We couldn’t refresh document statuses.',
+  documentStatusPending: 'Pending',
+  documentStatusProcessing: 'Processing',
+  documentStatusReady: 'Ready',
+  documentStatusFailed: 'Failed',
+  selectDocument: 'Select a document',
+  supportedDocumentFormats:
+    'Accepted formats: PDF, TXT, DOCX. Maximum size: {{size}} MB.',
+  selectedFile: 'Selected file: {{name}}',
+  upload: 'Upload',
+  uploading: 'Uploading…',
+  uploadAccepted:
+    'Upload accepted. Processing will continue in the background.',
+  unsupportedFileType: 'Unsupported file type. Use PDF, TXT, or DOCX.',
+  fileTooLarge: 'File is too large. Maximum size is {{size}} MB.',
+  documentUploadInvalid:
+    'This file could not be processed. Check the format and try again.',
+  documentUploadUnavailable:
+    'We couldn’t upload this file right now. Please try again.',
   chatNotConnected: 'The assistant is not connected yet.',
 }
 

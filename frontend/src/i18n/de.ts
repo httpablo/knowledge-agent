@@ -28,7 +28,31 @@ const de: Translation = {
   logout: 'Abmelden',
   documents: 'Dokumente',
   chat: 'Chat',
-  documentsNotConnected: 'Der Dokumenten-Upload ist noch nicht verbunden.',
+  loadingDocuments: 'Dokumente werden geladen…',
+  noDocuments: 'Noch keine Dokumente.',
+  documentsLoadError: 'Ihre Dokumente konnten nicht geladen werden.',
+  tryAgain: 'Erneut versuchen',
+  documentsRefreshError: 'Der Dokumentstatus konnte nicht aktualisiert werden.',
+  documentStatusPending: 'Ausstehend',
+  documentStatusProcessing: 'Wird verarbeitet',
+  documentStatusReady: 'Bereit',
+  documentStatusFailed: 'Fehlgeschlagen',
+  selectDocument: 'Dokument auswählen',
+  supportedDocumentFormats:
+    'Unterstützte Formate: PDF, TXT, DOCX. Maximale Größe: {{size}} MB.',
+  selectedFile: 'Ausgewählte Datei: {{name}}',
+  upload: 'Hochladen',
+  uploading: 'Wird hochgeladen…',
+  uploadAccepted:
+    'Upload angenommen. Die Verarbeitung wird im Hintergrund fortgesetzt.',
+  unsupportedFileType:
+    'Nicht unterstützter Dateityp. Verwenden Sie PDF, TXT oder DOCX.',
+  fileTooLarge:
+    'Die Datei ist zu groß. Die maximale Größe beträgt {{size}} MB.',
+  documentUploadInvalid:
+    'Diese Datei konnte nicht verarbeitet werden. Prüfen Sie das Format und versuchen Sie es erneut.',
+  documentUploadUnavailable:
+    'Die Datei konnte gerade nicht hochgeladen werden. Versuchen Sie es erneut.',
   chatNotConnected: 'Der Assistent ist noch nicht verbunden.',
 }
 

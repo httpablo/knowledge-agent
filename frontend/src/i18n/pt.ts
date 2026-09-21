@@ -25,7 +25,28 @@ const pt: Translation = {
   logout: 'Sair',
   documents: 'Documentos',
   chat: 'Chat',
-  documentsNotConnected: 'O envio de documentos ainda não está conectado.',
+  loadingDocuments: 'Carregando documentos…',
+  noDocuments: 'Nenhum documento ainda.',
+  documentsLoadError: 'Não foi possível carregar seus documentos.',
+  tryAgain: 'Tentar novamente',
+  documentsRefreshError: 'Não foi possível atualizar o status dos documentos.',
+  documentStatusPending: 'Pendente',
+  documentStatusProcessing: 'Processando',
+  documentStatusReady: 'Pronto',
+  documentStatusFailed: 'Falhou',
+  selectDocument: 'Selecionar documento',
+  supportedDocumentFormats:
+    'Formatos aceitos: PDF, TXT, DOCX. Tamanho máximo: {{size}} MB.',
+  selectedFile: 'Arquivo selecionado: {{name}}',
+  upload: 'Enviar',
+  uploading: 'Enviando…',
+  uploadAccepted: 'Upload aceito. O processamento continuará em segundo plano.',
+  unsupportedFileType: 'Tipo de arquivo não suportado. Use PDF, TXT ou DOCX.',
+  fileTooLarge: 'O arquivo é muito grande. O tamanho máximo é {{size}} MB.',
+  documentUploadInvalid:
+    'Não foi possível processar este arquivo. Verifique o formato e tente novamente.',
+  documentUploadUnavailable:
+    'Não foi possível enviar este arquivo agora. Tente novamente.',
   chatNotConnected: 'O assistente ainda não está conectado.',
 }
 

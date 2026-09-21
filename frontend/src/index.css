@@ -9,6 +9,8 @@
   --color-primary: #4f46e5;
   --color-primary-foreground: #ffffff;
   --color-destructive: #b91c1c;
+  --color-success: #15803d;
+  --color-warning: #b45309;
 }
 
 body {
