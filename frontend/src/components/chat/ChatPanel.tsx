@@ -3,17 +3,25 @@ import type { FormEvent, KeyboardEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { sendChatMessage } from '../../api/chat'
+import type { ChatSource } from '../../api/chat'
 import { ApiError } from '../../api/client'
 import type { Translation } from '../../i18n/en'
 import ErrorMessage from '../ErrorMessage'
 import SubmitButton from '../SubmitButton'
+import MessageSources from './MessageSources'
 
 const MAX_QUESTION_LENGTH = 2000
 const IME_KEY_CODE = 229
 
 type ChatMessage =
   | { id: string; role: 'user'; content: string }
-  | { id: string; role: 'assistant'; content: string; answerable: boolean }
+  | {
+      id: string
+      role: 'assistant'
+      content: string
+      answerable: boolean
+      sources: ChatSource[]
+    }
 
 function errorKeyFor(error: unknown): keyof Translation {
   if (error instanceof ApiError && error.status === 422) {
@@ -46,6 +54,11 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       >
         {notFound ? t('answerNotFound') : message.content}
       </p>
+      {message.role === 'assistant' &&
+        message.answerable &&
+        message.sources.length > 0 && (
+          <MessageSources sources={message.sources} />
+        )}
     </li>
   )
 }
@@ -117,6 +130,7 @@ function ChatPanel({ token }: { token: string }) {
           role: 'assistant',
           content: response.answer,
           answerable: response.answerable,
+          sources: response.sources,
         },
       ])
     } catch (error) {

@@ -65,6 +65,9 @@ const de: Translation = {
     'Diese Frage ist ungültig. Prüfen Sie sie und versuchen Sie es erneut.',
   you: 'Sie',
   assistant: 'Assistent',
+  sourceCount_one: '{{count}} Quelle',
+  sourceCount_other: '{{count}} Quellen',
+  sourcePage: 'Seite {{page}}',
 }
 
 export default de

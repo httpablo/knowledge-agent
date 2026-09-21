@@ -57,6 +57,9 @@ const pt: Translation = {
   invalidQuestion: 'Esta pergunta não é válida. Verifique e tente novamente.',
   you: 'Você',
   assistant: 'Assistente',
+  sourceCount_one: '{{count}} fonte',
+  sourceCount_other: '{{count}} fontes',
+  sourcePage: 'Página {{page}}',
 }
 
 export default pt

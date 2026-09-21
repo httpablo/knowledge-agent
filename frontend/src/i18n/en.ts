@@ -56,6 +56,9 @@ const en = {
   invalidQuestion: 'This question isn’t valid. Please check it and try again.',
   you: 'You',
   assistant: 'Assistant',
+  sourceCount_one: '{{count}} source',
+  sourceCount_other: '{{count}} sources',
+  sourcePage: 'Page {{page}}',
 }
 
 export type Translation = typeof en
