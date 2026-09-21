@@ -15,6 +15,7 @@ export type AuthState =
 
 export type AuthContextValue = AuthState & {
   establishSession: (accessToken: string) => Promise<void>
+  retrySession: () => void
   logout: () => void
 }
 
