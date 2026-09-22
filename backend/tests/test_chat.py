@@ -4,9 +4,17 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from services import chat
+from services import retrieval as retrieval_service
 from services.llm_client import GroundedAnswer, LLMError, TransientLLMError
 from services.retrieval import RetrievedChunk
-from tests.conftest import FakeLLM, MakeUser, RegisteredUser, make_document
+from tests.conftest import (
+    FakeLLM,
+    MakeUser,
+    RegisteredUser,
+    fixed_query_embedding,
+    make_document,
+    vector_at_distance,
+)
 
 VACATION_QUESTION = 'Quantos dias de férias por ano?'
 VACATION_CHUNK = 'Cada colaborador tem 30 dias de férias por ano.'
@@ -48,6 +56,155 @@ def test_guardrails_keep_close_chunks_only() -> None:
 def test_guardrails_reject_everything_when_the_best_is_far() -> None:
     assert chat._within_distance_guardrails([_chunk(0.86), _chunk(0.95)]) == []
     assert chat._within_distance_guardrails([]) == []
+
+
+async def test_evidence_outside_top5_but_inside_top30_reaches_the_model(
+    session: AsyncSession,
+    user: RegisteredUser,
+    llm: FakeLLM,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        retrieval_service, 'embed_texts', fixed_query_embedding
+    )
+    noise = [f'Regra irrelevante número {index}.' for index in range(6)]
+    noise_vectors = [
+        vector_at_distance(0.10 + index * 0.001) for index in range(6)
+    ]
+    target = 'A prova será em 1º de novembro de 2026.'
+    await make_document(
+        session,
+        user.organization_id,
+        'edital.pdf',
+        [*noise, target],
+        embeddings=[*noise_vectors, vector_at_distance(0.13)],
+    )
+    llm.answers(_grounded(answer='1º de novembro de 2026', source_ids=['S7']))
+
+    old_style = await retrieval_service.search_chunks(
+        session, user.organization_id, 'qual a data da prova?', top_k=5
+    )
+    assert target not in [chunk.content for chunk in old_style]
+
+    answer = await chat.answer_question(
+        session, user.organization_id, 'qual a data da prova?'
+    )
+
+    assert target in llm.prompt
+    assert answer.answerable
+    [citation] = answer.citations
+    assert citation.content == target
+
+
+async def test_far_candidates_within_top30_are_excluded_by_max_distance(
+    session: AsyncSession,
+    user: RegisteredUser,
+    llm: FakeLLM,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        retrieval_service, 'embed_texts', fixed_query_embedding
+    )
+    close = 'Fato relevante e próximo.'
+    far = 'Fato irrelevante e distante.'
+    await make_document(
+        session,
+        user.organization_id,
+        'doc.pdf',
+        [close, far],
+        embeddings=[vector_at_distance(0.30), vector_at_distance(0.90)],
+    )
+    llm.answers(_grounded(source_ids=['S1']))
+
+    await chat.answer_question(session, user.organization_id, 'pergunta')
+
+    assert close in llm.prompt
+    assert far not in llm.prompt
+
+
+async def test_relative_distance_window_still_prunes_moderate_outliers(
+    session: AsyncSession,
+    user: RegisteredUser,
+    llm: FakeLLM,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        retrieval_service, 'embed_texts', fixed_query_embedding
+    )
+    close = 'Fato próximo.'
+    moderate = 'Fato moderado.'
+    await make_document(
+        session,
+        user.organization_id,
+        'doc.pdf',
+        [close, moderate],
+        embeddings=[vector_at_distance(0.10), vector_at_distance(0.40)],
+    )
+    llm.answers(_grounded(source_ids=['S1']))
+
+    await chat.answer_question(session, user.organization_id, 'pergunta')
+
+    assert close in llm.prompt
+    assert moderate not in llm.prompt
+
+
+async def test_source_labels_above_s9_are_generated_and_cited_correctly(
+    session: AsyncSession,
+    user: RegisteredUser,
+    llm: FakeLLM,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        retrieval_service, 'embed_texts', fixed_query_embedding
+    )
+    facts = [f'fato-{index}' for index in range(1, 31)]
+    vectors = [
+        vector_at_distance(0.10 + (index - 1) * 0.001)
+        for index in range(1, 31)
+    ]
+    await make_document(
+        session, user.organization_id, 'doc.pdf', facts, embeddings=vectors
+    )
+    llm.answers(_grounded(source_ids=['S23', 'S30']))
+
+    answer = await chat.answer_question(
+        session, user.organization_id, 'pergunta'
+    )
+
+    assert '<source id="S23">' in llm.prompt
+    assert '<source id="S30">' in llm.prompt
+    cited = {citation.content for citation in answer.citations}
+    assert cited == {'fato-23', 'fato-30'}
+
+
+async def test_source_id_beyond_available_range_is_rejected(
+    session: AsyncSession,
+    user: RegisteredUser,
+    llm: FakeLLM,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        retrieval_service, 'embed_texts', fixed_query_embedding
+    )
+    facts = [f'fato-{index}' for index in range(1, 31)]
+    vectors = [
+        vector_at_distance(0.10 + (index - 1) * 0.001)
+        for index in range(1, 31)
+    ]
+    await make_document(
+        session, user.organization_id, 'doc.pdf', facts, embeddings=vectors
+    )
+    invalid = GroundedAnswer(
+        answerable=True, answer='Inventado', source_ids=['S31']
+    )
+    llm.answers(invalid, _grounded(source_ids=['S1']))
+
+    answer = await chat.answer_question(
+        session, user.organization_id, 'pergunta'
+    )
+
+    assert answer.answerable
+    assert len(llm.calls) == 2
 
 
 async def test_answerable_question_cites_the_retrieved_chunk(

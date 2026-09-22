@@ -5,7 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import DocumentStatus
 from services import retrieval
-from tests.conftest import MakeUser, RegisteredUser, make_document
+from tests.conftest import (
+    MakeUser,
+    RegisteredUser,
+    fixed_query_embedding,
+    make_document,
+    vector_at_distance,
+)
 
 VACATION_QUESTION = 'Quantos dias de férias por ano?'
 
@@ -60,7 +66,10 @@ async def test_search_is_limited_to_top_k(
         session,
         user.organization_id,
         'policy.pdf',
-        [f'Regra número {index} sobre férias.' for index in range(8)],
+        [
+            f'Regra número {index} sobre férias.'
+            for index in range(retrieval.TOP_K + 3)
+        ],
     )
 
     results = await retrieval.search_chunks(
@@ -107,6 +116,36 @@ async def test_search_without_documents_returns_nothing(
     )
 
     assert results == []
+
+
+async def test_organization_filter_applies_before_ranking_and_limiting(
+    session: AsyncSession,
+    make_user: MakeUser,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(retrieval, 'embed_texts', fixed_query_embedding)
+    alice = await make_user(name='Alice', email='alice@example.com')
+    bob = await make_user(name='Bob', email='bob@example.com')
+    await make_document(
+        session,
+        alice.organization_id,
+        'alice-policy.pdf',
+        ['Regra da Alice'],
+        embeddings=[vector_at_distance(0.30)],
+    )
+    await make_document(
+        session,
+        bob.organization_id,
+        'bob-secret.pdf',
+        ['Segredo do Bob'],
+        embeddings=[vector_at_distance(0.01)],
+    )
+
+    results = await retrieval.search_chunks(
+        session, alice.organization_id, 'pergunta'
+    )
+
+    assert [chunk.filename for chunk in results] == ['alice-policy.pdf']
 
 
 async def test_each_organization_retrieves_only_its_own_answer(

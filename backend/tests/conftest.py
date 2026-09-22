@@ -105,6 +105,21 @@ def fake_embedding(text: str) -> list[float]:
     return [value / norm for value in vector]
 
 
+def vector_at_distance(distance: float) -> list[float]:
+    cos_theta = 1 - distance
+    sin_theta = math.sqrt(max(0.0, 1 - cos_theta * cos_theta))
+    vector = [0.0] * EMBEDDING_DIMENSIONS
+    vector[0] = cos_theta
+    vector[1] = sin_theta
+    return vector
+
+
+async def fixed_query_embedding(
+    client: None, texts: list[str]
+) -> list[list[float]]:
+    return [vector_at_distance(0.0) for _ in texts]
+
+
 class FakeEmbeddings:
     def __init__(self) -> None:
         self.batches: list[list[str]] = []

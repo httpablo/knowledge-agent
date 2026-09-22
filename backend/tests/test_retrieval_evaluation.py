@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services import retrieval
+from services import chat, retrieval
 from services.embeddings import embed_texts, embedding_client
 from tests.conftest import RegisteredUser, make_document
 
@@ -31,6 +31,26 @@ CORPUS = {
     ],
 }
 
+EDITAL_CHUNKS = [
+    'Edital do Concurso Público. 1. DAS DISPOSIÇÕES PRELIMINARES. O '
+    'presente edital regula a realização do concurso público para '
+    'provimento de vagas em cargos efetivos, sob responsabilidade da '
+    'banca organizadora.',
+    '4. DA INSCRIÇÃO. As inscrições deverão ser realizadas exclusivamente '
+    'pela internet, mediante pagamento de taxa, no período estabelecido '
+    'neste edital, sendo vedada a inscrição condicional ou por '
+    'correspondência.',
+    '5. DA ISENÇÃO DA TAXA. Poderá ser concedida isenção do pagamento da '
+    'taxa de inscrição aos candidatos que comprovarem hipossuficiência '
+    'financeira, mediante requerimento e documentação comprobatória.',
+    '11. DA PROVA OBJETIVA. A Prova Objetiva, de caráter eliminatório e '
+    'classificatório, será aplicada aos candidatos regularmente '
+    'inscritos, e será realizada no dia 1º de novembro de 2026, em dois '
+    'turnos de aplicação, conforme o cargo a que o candidato concorre.',
+]
+
+EDITAL_EXAM_DATE_PAGE = 4
+
 
 @dataclass(frozen=True)
 class EvaluationCase:
@@ -52,8 +72,24 @@ CASES = [
 ]
 
 
+EDITAL_CASES = [
+    EvaluationCase(
+        'qual a data da prova do concurso?', '1º de novembro de 2026'
+    ),
+    EvaluationCase(
+        'quando os candidatos vão fazer a prova?', '1º de novembro de 2026'
+    ),
+    EvaluationCase('qual o valor da taxa de inscrição?', None),
+]
+
+
 @pytest.fixture
 def embeddings() -> None:
+    """Overrides the fake from conftest: this suite calls the real API."""
+
+
+@pytest.fixture
+def llm() -> None:
     """Overrides the fake from conftest: this suite calls the real API."""
 
 
@@ -69,6 +105,19 @@ async def corpus(session: AsyncSession, user: RegisteredUser) -> None:
                 chunks,
                 embeddings=vectors,
             )
+
+
+@pytest.fixture
+async def edital_corpus(session: AsyncSession, user: RegisteredUser) -> None:
+    async with embedding_client() as client:
+        vectors = await embed_texts(client, EDITAL_CHUNKS)
+    await make_document(
+        session,
+        user.organization_id,
+        'edital.pdf',
+        EDITAL_CHUNKS,
+        embeddings=vectors,
+    )
 
 
 async def test_answerable_questions_retrieve_the_expected_chunk(
@@ -105,6 +154,31 @@ async def test_reports_distances_for_threshold_tuning(
     with capsys.disabled():
         print('\nkind          best   worst   question')
         print('\n'.join(rows))
+
+
+async def test_edital_questions_are_answered_and_grounded_correctly(
+    session: AsyncSession, user: RegisteredUser, edital_corpus: None
+) -> None:
+    for case in EDITAL_CASES:
+        answer = await chat.answer_question(
+            session, user.organization_id, case.question
+        )
+
+        if case.expected is None:
+            assert answer.answerable is False, case.question
+            assert answer.citations == [], case.question
+            continue
+
+        assert answer.answerable is True, case.question
+        assert case.expected in answer.answer, case.question
+        assert answer.citations, case.question
+        assert all(
+            citation.filename == 'edital.pdf' for citation in answer.citations
+        ), case.question
+        assert any(
+            citation.page_number == EDITAL_EXAM_DATE_PAGE
+            for citation in answer.citations
+        ), case.question
 
 
 FOLLOW_UPS = [

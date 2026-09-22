@@ -6,7 +6,7 @@ from zipfile import BadZipFile, ZipFile
 
 from docx import Document as DocxDocument
 from docx.table import Table
-from pypdf import PdfReader
+from pypdf import PageObject, PdfReader
 
 DOCX_REQUIRED_PARTS = {
     '[Content_Types].xml',
@@ -48,7 +48,7 @@ def _extract_pdf(content: bytes) -> list[ExtractedSection]:
 
     sections = []
     for page_number, page in enumerate(reader.pages, start=1):
-        text = _clean(page.extract_text() or '')
+        text = _clean(_page_text(page))
         if text:
             sections.append(ExtractedSection(text, page_number))
     if not sections:
@@ -57,6 +57,12 @@ def _extract_pdf(content: bytes) -> list[ExtractedSection]:
             'are not supported'
         )
     return sections
+
+
+def _page_text(page: PageObject) -> str:
+    if page.get_contents() is None:
+        return ''
+    return page.extract_text(extraction_mode='layout') or ''
 
 
 def _extract_txt(content: bytes) -> list[ExtractedSection]:
