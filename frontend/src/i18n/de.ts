@@ -58,18 +58,12 @@ const de: Translation = {
   documentsLoadError: 'Ihre Dokumente konnten nicht geladen werden.',
   tryAgain: 'Erneut versuchen',
   documentsRefreshError: 'Der Dokumentstatus konnte nicht aktualisiert werden.',
-  documentStatusPending: 'Ausstehend',
+  documentStatusPending: 'In der Warteschlange',
   documentStatusProcessing: 'Wird verarbeitet',
   documentStatusReady: 'Bereit',
   documentStatusFailed: 'Fehlgeschlagen',
-  selectDocument: 'Dokument auswählen',
   supportedDocumentFormats:
     'Unterstützte Formate: PDF, TXT, DOCX. Maximale Größe: {{size}} MB.',
-  selectedFile: 'Ausgewählte Datei: {{name}}',
-  upload: 'Hochladen',
-  uploading: 'Wird hochgeladen…',
-  uploadAccepted:
-    'Upload angenommen. Die Verarbeitung wird im Hintergrund fortgesetzt.',
   unsupportedFileType:
     'Nicht unterstützter Dateityp. Verwenden Sie PDF, TXT oder DOCX.',
   fileTooLarge:
@@ -78,23 +72,51 @@ const de: Translation = {
     'Diese Datei konnte nicht verarbeitet werden. Prüfen Sie das Format und versuchen Sie es erneut.',
   documentUploadUnavailable:
     'Die Datei konnte gerade nicht hochgeladen werden. Versuchen Sie es erneut.',
-  askYourDocuments: 'Stellen Sie eine Frage zu Ihren Dokumenten.',
+  addDocuments: 'Hinzufügen',
+  dropAnywhereHint:
+    'Sie können Dateien auch an beliebiger Stelle hier ablegen.',
+  dropzoneTitle: 'Dateien hierher ziehen',
+  dropzoneDropping: 'Zum Hochladen loslassen',
+  chooseFiles: 'Dateien auswählen',
+  addDocumentsModalTitle: 'Dokumente hinzufügen',
+  addDocumentsModalLead:
+    'Dateien stehen für Fragen bereit, sobald die Verarbeitung abgeschlossen ist.',
+  filesRejectedTitle: 'Dateien nicht hochgeladen',
+  modalCloseHint:
+    'Sie können dieses Fenster schließen: Die Verarbeitung läuft im Hintergrund weiter.',
+  close: 'Schließen',
+  firstRunTitle: 'Laden Sie Ihr erstes Dokument hoch',
+  firstRunLead:
+    'PDF, TXT oder DOCX. Danach können Sie einfach fragen, und jede Antwort zeigt den Abschnitt, der sie belegt.',
+  processingTitle: 'Ihre Dokumente werden verarbeitet',
+  processingLead:
+    'Sie können fragen, sobald das erste Dokument bereit ist. Sie können diese Seite verlassen: Die Verarbeitung läuft im Hintergrund weiter.',
+  askYourDocuments: 'Fragen Sie Ihre Dokumente',
   askYourDocumentsHint:
-    'Antworten enthalten die Quellen, auf denen sie beruhen.',
+    'Antworten enthalten stets den Abschnitt, der sie belegt.',
+  suggestionsLabel: 'Hier beginnen',
+  suggestion1: 'Fassen Sie die hochgeladenen Dokumente zusammen',
+  suggestion2: 'Was sind die wichtigsten Punkte?',
+  suggestion3: 'Gibt es eine wichtige Frist oder ein Datum?',
   questionLabel: 'Ihre Frage',
   send: 'Senden',
-  sending: 'Wird gesendet…',
+  stop: 'Stoppen',
+  composerKeyboardHint:
+    'Eingabetaste sendet · Umschalt+Eingabetaste für Zeilenumbruch',
+  searchingDocuments_one: 'Suche in {{count}} Dokument',
+  searchingDocuments_other: 'Suche in {{count}} Dokumenten',
   answerNotFound:
     'Ich konnte diese Information in Ihren Dokumenten nicht finden.',
+  aiGeneratedNote:
+    'KI-generiert. Prüfen Sie die Quellen, bevor Sie sich darauf verlassen.',
   chatUnavailable:
     'Derzeit konnte keine Antwort erzeugt werden. Versuchen Sie es erneut.',
   invalidQuestion:
     'Diese Frage ist ungültig. Prüfen Sie sie und versuchen Sie es erneut.',
-  you: 'Sie',
-  assistant: 'Assistent',
-  sourceCount_one: '{{count}} Quelle',
-  sourceCount_other: '{{count}} Quellen',
+  sourcesTitle: 'Quellen dieser Antwort',
+  sourcesCount: 'Verwendete Abschnitte: {{count}}',
   sourcePage: 'Seite {{page}}',
+  toggleTheme: 'Design wechseln',
 }
 
 export default de

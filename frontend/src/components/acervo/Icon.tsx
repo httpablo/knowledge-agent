@@ -10,9 +10,19 @@ const ICON_PATHS = {
     'M14.12 14.12a3 3 0 1 1-4.24-4.24',
     'M1 1l22 22',
   ],
+  check: ['M5 12.5l4.5 4.5L19 7.5'],
+  clock: ['M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18z', 'M12 7v5l3 2'],
+  upload: ['M12 16V4', 'M8 8l4-4 4 4', 'M5 20h14'],
+  file: ['M7 3h7l5 5v13H7z', 'M14 3v5h5'],
+  plus: ['M12 5v14', 'M5 12h14'],
+  x: ['M6 6l12 12', 'M18 6L6 18'],
+  moon: ['M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z'],
+  logout: ['M10 4H5v16h5', 'M15 8l4 4-4 4', 'M19 12H9'],
+  send: ['M12 19V5', 'M6 11l6-6 6 6'],
+  stop: ['M7 7h10v10H7z'],
 } as const
 
-type IconName = keyof typeof ICON_PATHS
+export type IconName = keyof typeof ICON_PATHS
 
 function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
   return (
