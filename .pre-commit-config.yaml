@@ -35,7 +35,10 @@ repos:
 
       - id: backend-pytest
         name: backend - pytest (full suite)
-        entry: bash -c 'cd backend && uv run pytest -q'
+        entry: >-
+          bash -c 'cd backend &&
+          TEST_DATABASE_URL="${TEST_DATABASE_URL:-postgresql+asyncpg://app:app@localhost:${POSTGRES_PORT:-5432}/knowledge_agent_test}"
+          uv run pytest -q'
         language: system
         files: ^backend/
         pass_filenames: false
