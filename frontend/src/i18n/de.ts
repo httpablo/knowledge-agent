@@ -55,6 +55,11 @@ const de: Translation = {
   chat: 'Chat',
   loadingDocuments: 'Dokumente werden geladen…',
   noDocuments: 'Noch keine Dokumente.',
+  deleteDocumentAction: '{{name}} löschen',
+  deleteDocumentConfirm:
+    '{{name}} löschen? Das kann nicht rückgängig gemacht werden.',
+  deleteDocumentError:
+    'Das Dokument konnte nicht gelöscht werden. Versuchen Sie es erneut.',
   documentsLoadError: 'Ihre Dokumente konnten nicht geladen werden.',
   tryAgain: 'Erneut versuchen',
   documentsRefreshError: 'Der Dokumentstatus konnte nicht aktualisiert werden.',
@@ -117,6 +122,9 @@ const de: Translation = {
   sourcesCount: 'Verwendete Abschnitte: {{count}}',
   sourcePage: 'Seite {{page}}',
   toggleTheme: 'Design wechseln',
+  newConversation: 'Neue Unterhaltung',
+  loadingConversation: 'Ihre Unterhaltung wird geladen…',
+  conversationLoadError: 'Ihre Unterhaltung konnte nicht geladen werden.',
 }
 
 export default de

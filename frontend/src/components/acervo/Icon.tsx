@@ -20,6 +20,7 @@ const ICON_PATHS = {
   logout: ['M10 4H5v16h5', 'M15 8l4 4-4 4', 'M19 12H9'],
   send: ['M12 19V5', 'M6 11l6-6 6 6'],
   stop: ['M7 7h10v10H7z'],
+  trash: ['M5 7h14', 'M9 7V4h6v3', 'M7 7l1 13h8l1-13'],
 } as const
 
 export type IconName = keyof typeof ICON_PATHS

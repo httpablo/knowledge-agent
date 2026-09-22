@@ -10,6 +10,7 @@ import type { ChatMessage, UseChatResult } from './useChat'
 import SourcesColumn from './SourcesColumn'
 
 const IME_KEY_CODE = 229
+const MAX_QUESTION_LENGTH = 2000
 const SUGGESTION_KEYS = ['suggestion1', 'suggestion2', 'suggestion3'] as const
 
 function MessageBlock({ message }: { message: ChatMessage }) {
@@ -70,14 +71,56 @@ function ChatColumn({
     }
   }
 
-  const showComposer = readyCount > 0
-  const showSuggestions = readyCount > 0 && !chat.hasThread
-  const showProcessing = documentCount > 0 && readyCount === 0
-  const showFirstRun = documentCount === 0
+  const showComposer = readyCount > 0 && !chat.restoring
+  const showSuggestions =
+    readyCount > 0 && !chat.hasThread && !chat.restoring
+  const showProcessing =
+    documentCount > 0 &&
+    readyCount === 0 &&
+    !chat.hasThread &&
+    !chat.restoring
+  const showFirstRun =
+    documentCount === 0 && !chat.hasThread && !chat.restoring
 
   return (
     <section className="flex min-h-0 flex-1 flex-col">
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+        {chat.restoring && (
+          <p
+            role="status"
+            className="mx-auto max-w-[var(--measure)] pt-8 font-[family-name:var(--font-sans)] text-sm text-[var(--ink-muted)]"
+          >
+            {t('loadingConversation')}
+          </p>
+        )}
+
+        {chat.restoreErrorKey && (
+          <div className="mx-auto max-w-[var(--measure)] pt-8">
+            <Notice
+              action={
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={chat.retryRestore}
+                  >
+                    {t('tryAgain')}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={chat.startNewConversation}
+                  >
+                    {t('newConversation')}
+                  </Button>
+                </div>
+              }
+            >
+              {t(chat.restoreErrorKey)}
+            </Notice>
+          </div>
+        )}
+
         {showFirstRun && (
           <div className="mx-auto flex max-w-[var(--measure)] flex-col gap-3 pt-8">
             <h1 className="font-[family-name:var(--font-serif)] text-[32px] leading-[38px] font-medium tracking-[-0.01em] text-[var(--ink)]">
@@ -168,9 +211,21 @@ function ChatColumn({
 
       {showComposer && (
         <div className="sticky bottom-0 mx-auto w-full max-w-[calc(var(--measure)+48px)] bg-[var(--paper)] px-6 pb-6 lg:static">
-          <p className="mb-2 font-[family-name:var(--font-sans)] text-xs leading-4 text-[var(--ink-muted)]">
-            {t('searchingDocuments', { count: readyCount })}
-          </p>
+          <div className="mb-2 flex items-center gap-3">
+            <p className="min-w-0 flex-1 font-[family-name:var(--font-sans)] text-xs leading-4 text-[var(--ink-muted)]">
+              {t('searchingDocuments', { count: readyCount })}
+            </p>
+            {chat.hasThread && (
+              <button
+                type="button"
+                onClick={chat.startNewConversation}
+                disabled={chat.sending}
+                className="shrink-0 font-[family-name:var(--font-sans)] text-xs leading-4 font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] disabled:cursor-not-allowed disabled:text-[var(--ink-muted)]"
+              >
+                {t('newConversation')}
+              </button>
+            )}
+          </div>
           <form
             onSubmit={(event) => {
               event.preventDefault()
@@ -184,6 +239,7 @@ function ChatColumn({
             <textarea
               id="chat-question"
               rows={2}
+              maxLength={MAX_QUESTION_LENGTH}
               value={chat.draft}
               onChange={(event) => chat.setDraft(event.target.value)}
               onKeyDown={handleKeyDown}

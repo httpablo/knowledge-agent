@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 
 import { getMe } from '../api/auth'
 import { ApiError } from '../api/client'
+import { clearStoredConversationId } from '../components/workspace/useChat'
 import { AuthContext } from './AuthContext'
 import type { AuthState } from './AuthContext'
 
@@ -118,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     cancelVerification()
     clearToken()
+    clearStoredConversationId()
     setState({ status: 'unauthenticated' })
   }, [cancelVerification])
 

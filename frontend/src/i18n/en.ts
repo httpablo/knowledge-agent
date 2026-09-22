@@ -47,6 +47,10 @@ const en = {
   chat: 'Chat',
   loadingDocuments: 'Loading documents…',
   noDocuments: 'No documents yet.',
+  deleteDocumentAction: 'Delete {{name}}',
+  deleteDocumentConfirm:
+    'Delete {{name}}? This cannot be undone.',
+  deleteDocumentError: 'We couldn’t delete this document. Please try again.',
   documentsLoadError: 'We couldn’t load your documents.',
   tryAgain: 'Try again',
   documentsRefreshError: 'We couldn’t refresh document statuses.',
@@ -101,6 +105,9 @@ const en = {
   sourcesCount: 'Passages used: {{count}}',
   sourcePage: 'Page {{page}}',
   toggleTheme: 'Toggle theme',
+  newConversation: 'New conversation',
+  loadingConversation: 'Loading your conversation…',
+  conversationLoadError: 'We couldn’t load your conversation.',
 }
 
 export type Translation = typeof en

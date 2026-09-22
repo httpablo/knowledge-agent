@@ -18,14 +18,21 @@ const BADGE_STATUS: Record<DocumentStatus, BadgeStatus> = {
 function DocumentRow({
   document,
   formatDate,
+  deleting,
+  deleteFailed,
+  onDelete,
 }: {
   document: DocumentResponse
   formatDate: (value: string) => string
+  deleting: boolean
+  deleteFailed: boolean
+  onDelete: () => void
 }) {
   const { t } = useTranslation()
+  const canDelete = document.status === 'READY' || document.status === 'FAILED'
 
   return (
-    <li className="grid grid-cols-[28px_minmax(0,1fr)] gap-3 border-t border-[var(--line)] px-5 py-3">
+    <li className="grid grid-cols-[28px_minmax(0,1fr)_28px] items-start gap-3 border-t border-[var(--line)] px-5 py-3">
       <span className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] bg-[var(--paper-sunken)] text-[var(--ink-muted)]">
         <Icon name="file" size={16} />
       </span>
@@ -49,7 +56,32 @@ function DocumentRow({
             {document.processing_error}
           </p>
         )}
+        {deleteFailed && (
+          <p className="mt-2 max-w-[42ch] font-[family-name:var(--font-sans)] text-xs leading-4 wrap-anywhere text-[var(--danger)]">
+            {t('deleteDocumentError')}
+          </p>
+        )}
       </div>
+      {canDelete && (
+        <Button
+          variant="ghost"
+          size="sm"
+          iconOnly
+          icon="trash"
+          busy={deleting}
+          disabled={deleting}
+          aria-label={t('deleteDocumentAction', { name: document.filename })}
+          onClick={() => {
+            if (
+              window.confirm(
+                t('deleteDocumentConfirm', { name: document.filename }),
+              )
+            ) {
+              onDelete()
+            }
+          }}
+        />
+      )}
     </li>
   )
 }
@@ -61,6 +93,9 @@ function DocumentsColumn({
   retry,
   retryRefresh,
   onAdd,
+  deleting,
+  deleteErrors,
+  onDelete,
 }: {
   documents: DocumentResponse[]
   formatDate: (value: string) => string
@@ -68,6 +103,9 @@ function DocumentsColumn({
   retry: () => void
   retryRefresh: () => void
   onAdd: () => void
+  deleting: Record<string, boolean>
+  deleteErrors: Record<string, boolean>
+  onDelete: (documentId: string) => void
 }) {
   const { t } = useTranslation()
 
@@ -124,6 +162,9 @@ function DocumentsColumn({
               key={document.id}
               document={document}
               formatDate={formatDate}
+              deleting={deleting[document.id] === true}
+              deleteFailed={deleteErrors[document.id] === true}
+              onDelete={() => onDelete(document.id)}
             />
           ))}
         </ul>

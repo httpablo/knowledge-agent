@@ -40,6 +40,14 @@ class DocumentNotFoundError(Exception):
     pass
 
 
+class DocumentProcessingError(Exception):
+    pass
+
+
+class DocumentStorageError(Exception):
+    pass
+
+
 async def create_document(
     session: AsyncSession,
     storage: StorageService,
@@ -109,6 +117,35 @@ async def get_document(
     if document is None:
         raise DocumentNotFoundError
     return document
+
+
+async def delete_document(
+    session: AsyncSession,
+    storage: StorageService,
+    organization_id: UUID,
+    document_id: UUID,
+) -> None:
+    document = await get_document(session, organization_id, document_id)
+
+    if document.status in {
+        DocumentStatus.PENDING,
+        DocumentStatus.PROCESSING,
+    }:
+        raise DocumentProcessingError
+
+    if document.storage_key:
+        try:
+            await storage.delete(document.storage_key)
+        except Exception as exc:
+            raise DocumentStorageError from exc
+
+    async with session.begin():
+        await session.execute(
+            delete(Document).where(
+                Document.id == document_id,
+                Document.organization_id == organization_id,
+            )
+        )
 
 
 async def _enqueue_processing(document_id: UUID) -> None:

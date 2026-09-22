@@ -74,3 +74,27 @@ async def get_document(
             status_code=status.HTTP_404_NOT_FOUND, detail=DOCUMENT_NOT_FOUND
         ) from exc
     return DocumentResponse.model_validate(document)
+
+
+@router.delete('/{document_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_document(
+    document_id: UUID, auth: Auth, session: SessionDep, storage: Storage
+) -> None:
+    try:
+        await documents_service.delete_document(
+            session, storage, auth.organization.id, document_id
+        )
+    except documents_service.DocumentNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=DOCUMENT_NOT_FOUND
+        ) from exc
+    except documents_service.DocumentProcessingError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail='Document is currently being processed',
+        ) from exc
+    except documents_service.DocumentStorageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail='Could not remove the stored file; try again',
+        ) from exc

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 
-import { sendChatMessage } from '../../api/chat'
-import type { ChatSource } from '../../api/chat'
+import { getConversationMessages, sendChatMessage } from '../../api/chat'
+import type { ChatSource, MessageResponse } from '../../api/chat'
 import { ApiError } from '../../api/client'
 import type { Translation } from '../../i18n/en'
+
+const CONVERSATION_STORAGE_KEY = 'knowledge-agent-conversation-id'
 
 export type ChatMessage =
   | { id: string; role: 'user'; content: string }
@@ -14,6 +16,40 @@ export type ChatMessage =
       answerable: boolean
       sources: ChatSource[]
     }
+
+function readStoredConversationId(): string | null {
+  try {
+    return localStorage.getItem(CONVERSATION_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function storeConversationId(conversationId: string): void {
+  try {
+    localStorage.setItem(CONVERSATION_STORAGE_KEY, conversationId)
+  } catch {}
+}
+
+export function clearStoredConversationId(): void {
+  try {
+    localStorage.removeItem(CONVERSATION_STORAGE_KEY)
+  } catch {}
+}
+
+function toChatMessage(message: MessageResponse): ChatMessage {
+  if (message.role === 'USER') {
+    return { id: message.id, role: 'user', content: message.content }
+  }
+
+  return {
+    id: message.id,
+    role: 'assistant',
+    content: message.content,
+    answerable: message.content !== '' || message.sources.length > 0,
+    sources: message.sources,
+  }
+}
 
 function errorKeyFor(error: unknown): keyof Translation {
   if (error instanceof ApiError && error.status === 422) {
@@ -32,6 +68,13 @@ export function useChat(token: string) {
   const [lastFailedQuestion, setLastFailedQuestion] = useState<string | null>(
     null,
   )
+  const [restoring, setRestoring] = useState(
+    () => readStoredConversationId() !== null,
+  )
+  const [restoreErrorKey, setRestoreErrorKey] = useState<
+    keyof Translation | null
+  >(null)
+  const [restoreAttempt, setRestoreAttempt] = useState(0)
   const inFlight = useRef(false)
   const controller = useRef<AbortController | null>(null)
 
@@ -40,6 +83,45 @@ export function useChat(token: string) {
       controller.current?.abort()
     }
   }, [])
+
+  useEffect(() => {
+    const storedId = readStoredConversationId()
+
+    if (!storedId) {
+      return
+    }
+
+    let cancelled = false
+
+    getConversationMessages(token, storedId)
+      .then((history) => {
+        if (cancelled) {
+          return
+        }
+
+        setConversationId(storedId)
+        setMessages(history.map(toChatMessage))
+        setRestoring(false)
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return
+        }
+
+        if (error instanceof ApiError && error.status === 404) {
+          clearStoredConversationId()
+          setRestoring(false)
+          return
+        }
+
+        setRestoreErrorKey('conversationLoadError')
+        setRestoring(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [token, restoreAttempt])
 
   async function send(question: string) {
     const trimmed = question.trim()
@@ -75,6 +157,7 @@ export function useChat(token: string) {
       }
 
       setConversationId(response.conversation_id)
+      storeConversationId(response.conversation_id)
       setMessages((current) => [
         ...current,
         {
@@ -112,6 +195,25 @@ export function useChat(token: string) {
     }
   }
 
+  function retryRestore() {
+    setRestoring(true)
+    setRestoreErrorKey(null)
+    setRestoreAttempt((current) => current + 1)
+  }
+
+  function startNewConversation() {
+    if (sending) {
+      return
+    }
+
+    clearStoredConversationId()
+    setConversationId(null)
+    setMessages([])
+    setErrorKey(null)
+    setLastFailedQuestion(null)
+    setRestoreErrorKey(null)
+  }
+
   const lastSourcedAnswer = [...messages]
     .reverse()
     .find(
@@ -131,6 +233,10 @@ export function useChat(token: string) {
     send,
     stop,
     retryLast,
+    restoring,
+    restoreErrorKey,
+    retryRestore,
+    startNewConversation,
     latestSources: lastSourcedAnswer?.sources ?? [],
   }
 }

@@ -155,6 +155,9 @@ function WorkspacePage() {
               setRejected([])
               setModalOpen(true)
             }}
+            deleting={docs.deleting}
+            deleteErrors={docs.deleteErrors}
+            onDelete={docs.removeDocument}
           />
         </div>
 

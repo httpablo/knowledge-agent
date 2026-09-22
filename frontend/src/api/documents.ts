@@ -32,3 +32,15 @@ export function uploadDocument(
     signal,
   })
 }
+
+export function deleteDocument(
+  token: string,
+  documentId: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  return apiRequest<void>(`/api/v1/documents/${documentId}`, {
+    method: 'DELETE',
+    token,
+    signal,
+  })
+}

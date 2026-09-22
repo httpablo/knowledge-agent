@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { listDocuments, uploadDocument } from '../../api/documents'
+import { deleteDocument, listDocuments, uploadDocument } from '../../api/documents'
 import type { DocumentResponse, DocumentStatus } from '../../api/documents'
 import { ApiError } from '../../api/client'
 import i18nInstance from '../../i18n'
@@ -81,6 +81,8 @@ export function useDocuments(token: string) {
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
   const [announcement, setAnnouncement] = useState('')
+  const [deleting, setDeleting] = useState<Record<string, boolean>>({})
+  const [deleteErrors, setDeleteErrors] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     const controller = new AbortController()
@@ -244,6 +246,37 @@ export function useDocuments(token: string) {
     return rejected
   }
 
+  async function removeDocument(documentId: string) {
+    if (deleting[documentId]) {
+      return
+    }
+
+    setDeleting((current) => ({ ...current, [documentId]: true }))
+    setDeleteErrors((current) => ({ ...current, [documentId]: false }))
+
+    try {
+      await deleteDocument(token, documentId)
+      setState((current) =>
+        current.status === 'loaded'
+          ? {
+              ...current,
+              documents: current.documents.filter(
+                (document) => document.id !== documentId,
+              ),
+            }
+          : current,
+      )
+    } catch {
+      setDeleteErrors((current) => ({ ...current, [documentId]: true }))
+    } finally {
+      setDeleting((current) => {
+        const next = { ...current }
+        delete next[documentId]
+        return next
+      })
+    }
+  }
+
   const readyCount = documents?.filter((d) => d.status === 'READY').length ?? 0
 
   return {
@@ -255,6 +288,9 @@ export function useDocuments(token: string) {
     retry,
     retryRefresh,
     uploadFiles,
+    removeDocument,
+    deleting,
+    deleteErrors,
   }
 }
 

@@ -49,6 +49,10 @@ const pt: Translation = {
   chat: 'Chat',
   loadingDocuments: 'Carregando documentos…',
   noDocuments: 'Nenhum documento ainda.',
+  deleteDocumentAction: 'Excluir {{name}}',
+  deleteDocumentConfirm: 'Excluir {{name}}? Essa ação não pode ser desfeita.',
+  deleteDocumentError:
+    'Não foi possível excluir este documento. Tente novamente.',
   documentsLoadError: 'Não foi possível carregar seus documentos.',
   tryAgain: 'Tentar novamente',
   documentsRefreshError: 'Não foi possível atualizar o status dos documentos.',
@@ -104,6 +108,9 @@ const pt: Translation = {
   sourcesCount: 'Trechos usados: {{count}}',
   sourcePage: 'Página {{page}}',
   toggleTheme: 'Alternar tema',
+  newConversation: 'Nova conversa',
+  loadingConversation: 'Carregando sua conversa…',
+  conversationLoadError: 'Não foi possível carregar sua conversa.',
 }
 
 export default pt
