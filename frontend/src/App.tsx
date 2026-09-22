@@ -22,9 +22,7 @@ function App() {
         path="/login"
         element={
           <GuestOnlyRoute>
-            <CenteredPanel>
-              <LoginPage />
-            </CenteredPanel>
+            <LoginPage />
           </GuestOnlyRoute>
         }
       />

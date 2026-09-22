@@ -2,14 +2,32 @@ import type { Translation } from './en'
 
 const de: Translation = {
   languageLabel: 'Sprache',
+  brandTagline:
+    'Fragen Sie Ihre Dokumente. Sehen Sie, woher die Antwort stammt.',
+  brandSpecimenQuestion: 'Wie lang ist die Kündigungsfrist?',
+  brandSpecimenAnswer:
+    'Der Mietvertrag verlangt 30 Tage Frist in Schriftform.',
+  brandSpecimenDocument: 'contrato-locacao-2026.pdf',
+  brandSpecimenPage: 'S. {{page}}',
+  brandSpecimenContext:
+    '9.1 Der MIETER darf die Immobilie jederzeit zurückgeben. ',
+  brandSpecimenHighlight:
+    'Die vorzeitige Kündigung ist mindestens dreißig Tage im Voraus schriftlich mitzuteilen.',
   signIn: 'Anmelden',
+  loginLead:
+    'Greifen Sie auf die Dokumentenbasis Ihrer Organisation zu.',
   createAccount: 'Konto erstellen',
+  noAccountYet: 'Noch kein Konto?',
   home: 'Startseite',
   email: 'E-Mail',
   password: 'Passwort',
+  showPassword: 'Anzeigen',
+  hidePassword: 'Verbergen',
+  fieldRequired: 'Dieses Feld ist erforderlich.',
+  invalidEmailFormat: 'Geben Sie eine gültige E-Mail-Adresse ein.',
   signingIn: 'Anmeldung läuft…',
   invalidCredentials:
-    'Ungültige E-Mail-Adresse oder ungültiges Passwort.',
+    'E-Mail oder Passwort falsch. Bitte prüfen und erneut versuchen.',
   invalidInput: 'Bitte überprüfen Sie Ihre Eingaben.',
   signInUnavailable:
     'Die Anmeldung ist derzeit nicht möglich. Versuchen Sie es erneut.',

@@ -1,0 +1,105 @@
+@font-face {
+  font-family: "Newsreader";
+  src: url("./fonts/newsreader-latin-wght-normal.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Newsreader";
+  src: url("./fonts/newsreader-latin-wght-italic.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Instrument Sans";
+  src: url("./fonts/instrument-sans-latin-wght-normal.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("./fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("./fonts/ibm-plex-mono-latin-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root, [data-theme="light"] {
+  --paper: #f7f4ee;
+  --paper-raised: #fffdf9;
+  --paper-sunken: #ece7dc;
+  --ink: #1e2320;
+  --ink-muted: #4f564f;
+  --ink-subtle: #5b625b;
+  --line: #d9d3c5;
+  --line-strong: #767c73;
+  --accent: #1d5a4a;
+  --accent-hover: #154536;
+  --on-accent: #f7f4ee;
+  --accent-soft: #dcebe3;
+  --accent-ink: #154536;
+  --mark: #f1dc8c;
+  --danger: #a1301d;
+  --danger-soft: #f6e0d9;
+  --warning: #805300;
+  --warning-soft: #f6e8c6;
+  --focus: #0f4fa8;
+  --shadow-pop: 0 6px 24px rgba(30, 35, 32, 0.14);
+}
+
+[data-theme="dark"] {
+  --paper: #141715;
+  --paper-raised: #1c201d;
+  --paper-sunken: #0f1210;
+  --ink: #ece8df;
+  --ink-muted: #b0b6ad;
+  --ink-subtle: #9aa198;
+  --line: #2b312c;
+  --line-strong: #727970;
+  --accent: #6fc2a6;
+  --accent-hover: #8ad3ba;
+  --on-accent: #0f1210;
+  --accent-soft: #1f3a31;
+  --accent-ink: #a6dfca;
+  --mark: #4a3f14;
+  --danger: #f39a83;
+  --danger-soft: #3b201a;
+  --warning: #e3b85f;
+  --warning-soft: #392d10;
+  --focus: #8ab8ff;
+  --shadow-pop: 0 6px 24px rgba(0, 0, 0, 0.5);
+}
+
+:root {
+  --font-serif: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-sans: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 72px;
+
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  --measure: 68ch;
+  --rail-width: 248px;
+  --panel-width: 360px;
+  --form-width: 400px;
+}

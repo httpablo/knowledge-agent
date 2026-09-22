@@ -2,13 +2,29 @@ import type { Translation } from './en'
 
 const pt: Translation = {
   languageLabel: 'Idioma',
+  brandTagline: 'Pergunte aos seus documentos. Veja de onde veio a resposta.',
+  brandSpecimenQuestion: 'Qual o prazo de aviso prévio?',
+  brandSpecimenAnswer: 'O contrato exige aviso de 30 dias, por escrito.',
+  brandSpecimenDocument: 'contrato-locacao-2026.pdf',
+  brandSpecimenPage: 'p. {{page}}',
+  brandSpecimenContext:
+    '9.1 O LOCATÁRIO poderá devolver o imóvel a qualquer tempo. ',
+  brandSpecimenHighlight:
+    'A rescisão antecipada deverá ser comunicada por escrito, com antecedência mínima de trinta dias.',
   signIn: 'Entrar',
+  loginLead: 'Acesse a base de documentos da sua organização.',
   createAccount: 'Criar conta',
+  noAccountYet: 'Ainda não tem conta?',
   home: 'Início',
   email: 'E-mail',
   password: 'Senha',
+  showPassword: 'Mostrar',
+  hidePassword: 'Ocultar',
+  fieldRequired: 'Preencha este campo.',
+  invalidEmailFormat: 'Informe um e-mail válido.',
   signingIn: 'Entrando…',
-  invalidCredentials: 'E-mail ou senha inválidos.',
+  invalidCredentials:
+    'E-mail ou senha incorretos. Confira e tente novamente.',
   invalidInput: 'Verifique as informações digitadas.',
   signInUnavailable: 'Não foi possível entrar agora. Tente novamente.',
   name: 'Nome',
