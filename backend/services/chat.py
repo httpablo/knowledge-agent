@@ -53,7 +53,14 @@ Never write them in answer, not even as "S1" or "source S1": state the \
 facts naturally, as the documents say them, and if you must tell two \
 documents apart, describe what each one says.
 - Never invent facts, file names, pages or source ids, and never cite ids \
-that are not listed in the current sources."""
+that are not listed in the current sources.
+- A source is a static snapshot: any date, time or other such detail it \
+contains describes the document or the event it discusses (when something \
+was published, signed, scheduled or due), never the present moment. Never \
+treat a date, time or state found in a source as today's date, the current \
+time, or any other fact about the world right now. If the question asks \
+for a present, real-world fact like that and the sources do not establish \
+it as such, set answerable to false."""
 
 
 @dataclass(frozen=True)

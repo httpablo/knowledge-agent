@@ -370,6 +370,24 @@ async def test_system_prompt_sent_ties_the_language_to_the_current_question(
     assert 'not a language instruction' in llm.system_prompt
 
 
+async def test_system_prompt_sent_never_treats_a_source_date_as_today(
+    session: AsyncSession, user: RegisteredUser, llm: FakeLLM
+) -> None:
+    await make_document(
+        session, user.organization_id, 'policy.pdf', [VACATION_CHUNK]
+    )
+    llm.answers(_grounded())
+
+    await chat.answer_question(
+        session, user.organization_id, VACATION_QUESTION
+    )
+
+    rule = _rule(llm.system_prompt, 'static snapshot')
+    assert 'never the present moment' in rule
+    assert "today's date, the current time" in rule
+    assert 'set answerable to false' in rule
+
+
 @pytest.mark.parametrize(
     'invalid',
     [

@@ -105,4 +105,76 @@ describe('ChatColumn', () => {
 
     expect(send).not.toHaveBeenCalled()
   })
+
+  it('shows the thinking indicator while a question is pending', () => {
+    const messages: ChatMessage[] = [
+      { id: 'u1', role: 'user', content: 'What is the notice period?' },
+    ]
+
+    renderChat(makeChat({ messages, hasThread: true, sending: true }))
+
+    expect(
+      screen.getByText('Searching your documents…'),
+    ).toBeInTheDocument()
+  })
+
+  it('hides the thinking indicator once the answer arrives', () => {
+    const messages: ChatMessage[] = [
+      { id: 'u1', role: 'user', content: 'What is the notice period?' },
+      {
+        id: 'a1',
+        role: 'assistant',
+        content: 'The notice period is 30 days.',
+        answerable: true,
+        sources: [],
+      },
+    ]
+
+    renderChat(makeChat({ messages, hasThread: true, sending: false }))
+
+    expect(
+      screen.queryByText('Searching your documents…'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('hides the thinking indicator when the request errors out', () => {
+    const messages: ChatMessage[] = [
+      { id: 'u1', role: 'user', content: 'What is the notice period?' },
+    ]
+
+    renderChat(
+      makeChat({
+        messages,
+        hasThread: true,
+        sending: false,
+        errorKey: 'chatUnavailable',
+      }),
+    )
+
+    expect(
+      screen.queryByText('Searching your documents…'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('hides the thinking indicator once the request is cancelled', () => {
+    const messages: ChatMessage[] = [
+      { id: 'u1', role: 'user', content: 'What is the notice period?' },
+    ]
+
+    renderChat(makeChat({ messages, hasThread: true, sending: false }))
+
+    expect(
+      screen.queryByText('Searching your documents…'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('does not persist the thinking indicator as a message', () => {
+    const messages: ChatMessage[] = [
+      { id: 'u1', role: 'user', content: 'What is the notice period?' },
+    ]
+
+    renderChat(makeChat({ messages, hasThread: true, sending: true }))
+
+    expect(messages).toHaveLength(1)
+  })
 })

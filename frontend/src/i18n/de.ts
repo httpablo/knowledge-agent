@@ -112,6 +112,7 @@ const de: Translation = {
   questionLabel: 'Ihre Frage',
   send: 'Senden',
   stop: 'Stoppen',
+  thinkingIndicator: 'Dokumente werden durchsucht…',
   composerKeyboardHint:
     'Eingabetaste sendet · Umschalt+Eingabetaste für Zeilenumbruch',
   searchingDocuments_one: 'Suche in {{count}} Dokument',

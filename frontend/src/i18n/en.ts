@@ -100,6 +100,7 @@ const en = {
   questionLabel: 'Your question',
   send: 'Send',
   stop: 'Stop',
+  thinkingIndicator: 'Searching your documents…',
   composerKeyboardHint: 'Enter to send · Shift+Enter for a new line',
   searchingDocuments_one: 'Searching {{count}} document',
   searchingDocuments_other: 'Searching {{count}} documents',

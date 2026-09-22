@@ -8,6 +8,7 @@ import Notice from '../acervo/Notice'
 import { MAX_UPLOAD_SIZE_MB } from './useDocuments'
 import type { ChatMessage, UseChatResult } from './useChat'
 import SourcesColumn from './SourcesColumn'
+import ThinkingIndicator from './ThinkingIndicator'
 
 const IME_KEY_CODE = 229
 const MAX_QUESTION_LENGTH = 2000
@@ -190,6 +191,7 @@ function ChatColumn({
             {chat.messages.map((message) => (
               <MessageBlock key={message.id} message={message} />
             ))}
+            {chat.sending && <ThinkingIndicator />}
           </div>
         )}
 

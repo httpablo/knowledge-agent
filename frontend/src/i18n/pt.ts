@@ -102,6 +102,7 @@ const pt: Translation = {
   questionLabel: 'Sua pergunta',
   send: 'Enviar',
   stop: 'Parar',
+  thinkingIndicator: 'Consultando seus documentos…',
   composerKeyboardHint: 'Enter envia · Shift+Enter quebra a linha',
   searchingDocuments_one: 'Buscando em {{count}} documento',
   searchingDocuments_other: 'Buscando em {{count}} documentos',
