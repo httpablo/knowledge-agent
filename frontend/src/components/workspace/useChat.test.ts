@@ -222,6 +222,62 @@ describe('useChat', () => {
     })
     expect(result.current.errorKey).toBe('chatUnavailable')
   })
+
+  it('always reflects the sources of the latest assistant message', async () => {
+    const source = {
+      chunk_id: 'chunk-1',
+      document_id: 'doc-1',
+      filename: 'lease.pdf',
+      page_number: 3,
+      content: '30 days notice required.',
+    }
+
+    sendChatMessageMock.mockResolvedValueOnce({
+      conversation_id: 'c1',
+      message_id: 'm1',
+      answerable: true,
+      answer: 'The notice period is 30 days.',
+      sources: [source],
+    })
+
+    const { result } = renderHook(() => useChat('token'))
+    await waitFor(() => expect(result.current.restoring).toBe(false))
+
+    await act(async () => {
+      await result.current.send('What is the notice period?')
+    })
+
+    expect(result.current.latestSources).toEqual([source])
+
+    sendChatMessageMock.mockResolvedValueOnce({
+      conversation_id: 'c1',
+      message_id: 'm2',
+      answerable: false,
+      answer: '',
+      sources: [],
+    })
+
+    await act(async () => {
+      await result.current.send('What is the meaning of life?')
+    })
+
+    expect(result.current.latestSources).toEqual([])
+
+    sendChatMessageMock.mockResolvedValueOnce({
+      conversation_id: 'c1',
+      message_id: 'm3',
+      answerable: true,
+      answer: 'Reimbursement takes up to 10 business days.',
+      sources: [{ ...source, chunk_id: 'chunk-2', filename: 'policy.pdf' }],
+    })
+
+    await act(async () => {
+      await result.current.send('And reimbursement?')
+    })
+
+    expect(result.current.latestSources).toHaveLength(1)
+    expect(result.current.latestSources[0].filename).toBe('policy.pdf')
+  })
 })
 
 describe('clearStoredConversationId', () => {

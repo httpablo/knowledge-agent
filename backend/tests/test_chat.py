@@ -58,7 +58,7 @@ def test_guardrails_reject_everything_when_the_best_is_far() -> None:
     assert chat._within_distance_guardrails([]) == []
 
 
-async def test_evidence_outside_top5_but_inside_top30_reaches_the_model(
+async def test_evidence_at_rank35_reaches_the_model(
     session: AsyncSession,
     user: RegisteredUser,
     llm: FakeLLM,
@@ -67,9 +67,9 @@ async def test_evidence_outside_top5_but_inside_top30_reaches_the_model(
     monkeypatch.setattr(
         retrieval_service, 'embed_texts', fixed_query_embedding
     )
-    noise = [f'Regra irrelevante número {index}.' for index in range(6)]
+    noise = [f'Regra irrelevante número {index}.' for index in range(34)]
     noise_vectors = [
-        vector_at_distance(0.10 + index * 0.001) for index in range(6)
+        vector_at_distance(0.10 + index * 0.001) for index in range(34)
     ]
     target = 'A prova será em 1º de novembro de 2026.'
     await make_document(
@@ -77,14 +77,14 @@ async def test_evidence_outside_top5_but_inside_top30_reaches_the_model(
         user.organization_id,
         'edital.pdf',
         [*noise, target],
-        embeddings=[*noise_vectors, vector_at_distance(0.13)],
+        embeddings=[*noise_vectors, vector_at_distance(0.144)],
     )
-    llm.answers(_grounded(answer='1º de novembro de 2026', source_ids=['S7']))
+    llm.answers(_grounded(answer='1º de novembro de 2026', source_ids=['S35']))
 
-    old_style = await retrieval_service.search_chunks(
-        session, user.organization_id, 'qual a data da prova?', top_k=5
+    smaller_top_k = await retrieval_service.search_chunks(
+        session, user.organization_id, 'qual a data da prova?', top_k=30
     )
-    assert target not in [chunk.content for chunk in old_style]
+    assert target not in [chunk.content for chunk in smaller_top_k]
 
     answer = await chat.answer_question(
         session, user.organization_id, 'qual a data da prova?'
@@ -96,7 +96,7 @@ async def test_evidence_outside_top5_but_inside_top30_reaches_the_model(
     assert citation.content == target
 
 
-async def test_far_candidates_within_top30_are_excluded_by_max_distance(
+async def test_far_candidates_are_excluded_by_max_distance(
     session: AsyncSession,
     user: RegisteredUser,
     llm: FakeLLM,
@@ -157,24 +157,24 @@ async def test_source_labels_above_s9_are_generated_and_cited_correctly(
     monkeypatch.setattr(
         retrieval_service, 'embed_texts', fixed_query_embedding
     )
-    facts = [f'fato-{index}' for index in range(1, 31)]
+    facts = [f'fato-{index}' for index in range(1, 36)]
     vectors = [
         vector_at_distance(0.10 + (index - 1) * 0.001)
-        for index in range(1, 31)
+        for index in range(1, 36)
     ]
     await make_document(
         session, user.organization_id, 'doc.pdf', facts, embeddings=vectors
     )
-    llm.answers(_grounded(source_ids=['S23', 'S30']))
+    llm.answers(_grounded(source_ids=['S23', 'S35']))
 
     answer = await chat.answer_question(
         session, user.organization_id, 'pergunta'
     )
 
     assert '<source id="S23">' in llm.prompt
-    assert '<source id="S30">' in llm.prompt
+    assert '<source id="S35">' in llm.prompt
     cited = {citation.content for citation in answer.citations}
-    assert cited == {'fato-23', 'fato-30'}
+    assert cited == {'fato-23', 'fato-35'}
 
 
 async def test_source_id_beyond_available_range_is_rejected(
@@ -186,16 +186,16 @@ async def test_source_id_beyond_available_range_is_rejected(
     monkeypatch.setattr(
         retrieval_service, 'embed_texts', fixed_query_embedding
     )
-    facts = [f'fato-{index}' for index in range(1, 31)]
+    facts = [f'fato-{index}' for index in range(1, 36)]
     vectors = [
         vector_at_distance(0.10 + (index - 1) * 0.001)
-        for index in range(1, 31)
+        for index in range(1, 36)
     ]
     await make_document(
         session, user.organization_id, 'doc.pdf', facts, embeddings=vectors
     )
     invalid = GroundedAnswer(
-        answerable=True, answer='Inventado', source_ids=['S31']
+        answerable=True, answer='Inventado', source_ids=['S36']
     )
     llm.answers(invalid, _grounded(source_ids=['S1']))
 

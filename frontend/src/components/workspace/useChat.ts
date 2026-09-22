@@ -214,13 +214,10 @@ export function useChat(token: string) {
     setRestoreErrorKey(null)
   }
 
-  const lastSourcedAnswer = [...messages]
+  const lastAssistantMessage = [...messages]
     .reverse()
     .find(
-      (message) =>
-        message.role === 'assistant' &&
-        message.answerable &&
-        message.sources.length > 0,
+      (message) => message.role === 'assistant',
     ) as Extract<ChatMessage, { role: 'assistant' }> | undefined
 
   return {
@@ -237,7 +234,7 @@ export function useChat(token: string) {
     restoreErrorKey,
     retryRestore,
     startNewConversation,
-    latestSources: lastSourcedAnswer?.sources ?? [],
+    latestSources: lastAssistantMessage?.sources ?? [],
   }
 }
 

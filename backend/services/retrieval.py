@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models import Document, DocumentChunk, DocumentStatus
 from services.embeddings import embed_texts, embedding_client
 
-TOP_K = 30
+TOP_K = 35
 
 
 @dataclass(frozen=True)
