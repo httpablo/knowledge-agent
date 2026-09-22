@@ -1,9 +1,12 @@
 import logging
 import math
+import time
 from dataclasses import dataclass
 from datetime import timedelta
+from itertools import batched
 from uuid import UUID
 
+from openai import AsyncOpenAI
 from sqlalchemy import (
     ColumnElement,
     and_,
@@ -19,9 +22,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models import Document, DocumentChunk, DocumentStatus
 from services.chunking import TextChunk, chunk_sections
 from services.embeddings import (
+    EMBEDDING_BATCH_SIZE,
     EmbeddingError,
     TransientEmbeddingError,
-    embed_texts,
+    embed_batch,
     embedding_client,
 )
 from services.parsing import (
@@ -34,6 +38,7 @@ from services.storage import StorageService
 logger = logging.getLogger(__name__)
 
 PROCESSING_TIMEOUT = timedelta(minutes=10)
+CHUNK_BATCH_SIZE = EMBEDDING_BATCH_SIZE
 
 
 @dataclass(frozen=True)
@@ -65,9 +70,10 @@ async def process_document(
         logger.info('Document %s is not claimable; skipping', document_id)
         return
 
+    started_at = time.monotonic()
     try:
         chunks = await _prepare_chunks(storage, document)
-        vectors = await _embed(document, chunks)
+        await _embed_and_store_chunks(session, document, chunks)
     except _ProcessingFailure as exc:
         await _fail(session, document.id, str(exc))
         await _discard_stored_file(
@@ -81,12 +87,14 @@ async def process_document(
         await _release_claim(session, document.id)
         raise
 
-    await _store_chunks(session, document, chunks, vectors)
     await _discard_stored_file(
         session, storage, document.id, document.storage_key
     )
     logger.info(
-        'Document %s is ready with %d chunks', document.id, len(chunks)
+        'Document %s is ready with %d chunks in %.2fs',
+        document.id,
+        len(chunks),
+        time.monotonic() - started_at,
     )
 
 
@@ -94,11 +102,25 @@ async def _prepare_chunks(
     storage: StorageService, document: ClaimedDocument
 ) -> list[TextChunk]:
     content = await _download(storage, document)
+
+    parse_started_at = time.monotonic()
     sections = _extract_text(document, content)
     logger.info(
-        'Extracted %d sections from document %s', len(sections), document.id
+        'Document %s: parsing done in %.2fs (%d sections)',
+        document.id,
+        time.monotonic() - parse_started_at,
+        len(sections),
     )
-    return chunk_sections(sections)
+
+    chunk_started_at = time.monotonic()
+    chunks = chunk_sections(sections)
+    logger.info(
+        'Document %s: chunking done in %.2fs (%d chunks)',
+        document.id,
+        time.monotonic() - chunk_started_at,
+        len(chunks),
+    )
+    return chunks
 
 
 async def _download(
@@ -126,47 +148,63 @@ def _extract_text(
         raise _ProcessingFailure(str(exc)) from exc
 
 
-async def _embed(
-    document: ClaimedDocument, chunks: list[TextChunk]
-) -> list[list[float]]:
+async def _embed_and_store_chunks(
+    session: AsyncSession,
+    document: ClaimedDocument,
+    chunks: list[TextChunk],
+) -> None:
+    async with embedding_client() as client, session.begin():
+        await session.execute(
+            delete(DocumentChunk).where(
+                DocumentChunk.document_id == document.id
+            )
+        )
+        for batch_index, batch in enumerate(
+            batched(chunks, CHUNK_BATCH_SIZE), start=1
+        ):
+            await _embed_and_persist_batch(
+                session, client, document, batch, batch_index
+            )
+        await session.execute(
+            update(Document)
+            .where(Document.id == document.id)
+            .values(status=DocumentStatus.READY, processing_error=None)
+        )
+
+
+async def _embed_and_persist_batch(
+    session: AsyncSession,
+    client: AsyncOpenAI,
+    document: ClaimedDocument,
+    batch: tuple[TextChunk, ...],
+    batch_index: int,
+) -> None:
     try:
-        async with embedding_client() as client:
-            return await embed_texts(client, [chunk.text for chunk in chunks])
+        vectors = await embed_batch(client, [chunk.text for chunk in batch])
     except TransientEmbeddingError:
         raise
     except EmbeddingError as exc:
         logger.exception('Could not embed document %s', document.id)
         raise _ProcessingFailure(str(exc)) from exc
 
-
-async def _store_chunks(
-    session: AsyncSession,
-    document: ClaimedDocument,
-    chunks: list[TextChunk],
-    vectors: list[list[float]],
-) -> None:
-    async with session.begin():
-        await session.execute(
-            delete(DocumentChunk).where(
-                DocumentChunk.document_id == document.id
-            )
+    session.add_all([
+        DocumentChunk(
+            organization_id=document.organization_id,
+            document_id=document.id,
+            content=chunk.text,
+            embedding=vector,
+            chunk_index=chunk.chunk_index,
+            page_number=chunk.page_number,
         )
-        session.add_all([
-            DocumentChunk(
-                organization_id=document.organization_id,
-                document_id=document.id,
-                content=chunk.text,
-                embedding=vector,
-                chunk_index=chunk.chunk_index,
-                page_number=chunk.page_number,
-            )
-            for chunk, vector in zip(chunks, vectors, strict=True)
-        ])
-        await session.execute(
-            update(Document)
-            .where(Document.id == document.id)
-            .values(status=DocumentStatus.READY, processing_error=None)
-        )
+        for chunk, vector in zip(batch, vectors, strict=True)
+    ])
+    await session.flush()
+    logger.info(
+        'Document %s: persisted embedding batch %d (%d chunks)',
+        document.id,
+        batch_index,
+        len(batch),
+    )
 
 
 async def _discard_stored_file(

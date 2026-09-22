@@ -59,11 +59,11 @@ async def embed_texts(
     vectors: list[list[float]] = []
     for start in range(0, len(texts), EMBEDDING_BATCH_SIZE):
         batch = texts[start : start + EMBEDDING_BATCH_SIZE]
-        vectors.extend(await _embed_batch(client, batch))
+        vectors.extend(await embed_batch(client, batch))
     return vectors
 
 
-async def _embed_batch(
+async def embed_batch(
     client: AsyncOpenAI, batch: list[str]
 ) -> list[list[float]]:
     try:

@@ -122,9 +122,14 @@ class FakeEmbeddings:
 @pytest.fixture(autouse=True)
 def embeddings(monkeypatch: pytest.MonkeyPatch) -> FakeEmbeddings:
     fake = FakeEmbeddings()
-    for module in (ingestion_service, retrieval_service):
-        monkeypatch.setattr(module, 'embed_texts', fake)
-        monkeypatch.setattr(module, 'embedding_client', fake_embedding_client)
+    monkeypatch.setattr(ingestion_service, 'embed_batch', fake)
+    monkeypatch.setattr(
+        ingestion_service, 'embedding_client', fake_embedding_client
+    )
+    monkeypatch.setattr(retrieval_service, 'embed_texts', fake)
+    monkeypatch.setattr(
+        retrieval_service, 'embedding_client', fake_embedding_client
+    )
     return fake
 
 

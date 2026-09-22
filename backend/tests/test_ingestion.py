@@ -17,10 +17,31 @@ from models import (
     DocumentStatus,
 )
 from services import ingestion
+from services.chunking import chunk_sections
 from services.embeddings import EmbeddingError, TransientEmbeddingError
-from tests.conftest import FakeEmbeddings, InMemoryStorage, RegisteredUser
+from services.parsing import extract_sections
+from tests.conftest import (
+    FakeEmbeddings,
+    InMemoryStorage,
+    RegisteredUser,
+    fake_embedding,
+)
 
 FIXTURES = Path(__file__).parent / 'fixtures'
+
+
+def _big_text_content(paragraphs: int = 150) -> bytes:
+    """Text sized so `chunk_sections` yields exactly one chunk per
+    paragraph, i.e. `paragraphs` chunks in total: enough to span 3
+    embedding/persistence batches (64 + 64 + 22) at CHUNK_BATCH_SIZE=64.
+    """
+    filler = (
+        'Lorem ipsum dolor sit amet consectetur adipiscing elit sed do '
+        'eiusmod tempor incididunt ut labore et dolore magna aliqua. '
+    )
+    return '\n\n'.join(
+        f'Paragraph {index}. {filler * 6}' for index in range(paragraphs)
+    ).encode()
 
 
 def _new_document(
@@ -214,17 +235,21 @@ async def test_transient_embedding_failure_releases_the_claim(
     embeddings: FakeEmbeddings,
 ) -> None:
     document = await _pending_document(session, storage, user)
+    document_id = document.id
     embeddings.error = TransientEmbeddingError('service unavailable')
 
     with pytest.raises(TransientEmbeddingError):
-        await ingestion.process_document(session, storage, document.id)
+        await ingestion.process_document(session, storage, document_id)
 
-    released = await _reload(session, document.id)
+    # The failed batch rolls back the transaction, which expires every
+    # attribute SQLAlchemy is tracking on `document` (including its id) -
+    # `document_id` was captured above so later assertions don't touch it.
+    released = await _reload(session, document_id)
     assert released.status == DocumentStatus.PENDING
     assert released.processing_started_at is None
     assert released.storage_key is not None
     assert storage.objects
-    assert await _chunks(session, document.id) == []
+    assert await _chunks(session, document_id) == []
 
 
 async def test_permanent_embedding_failure_marks_document_failed(
@@ -234,14 +259,15 @@ async def test_permanent_embedding_failure_marks_document_failed(
     embeddings: FakeEmbeddings,
 ) -> None:
     document = await _pending_document(session, storage, user)
+    document_id = document.id
     embeddings.error = EmbeddingError('The embedding request was rejected')
 
-    await ingestion.process_document(session, storage, document.id)
+    await ingestion.process_document(session, storage, document_id)
 
-    failed = await _reload(session, document.id)
+    failed = await _reload(session, document_id)
     assert failed.status == DocumentStatus.FAILED
     assert failed.processing_error == 'The embedding request was rejected'
-    assert await _chunks(session, document.id) == []
+    assert await _chunks(session, document_id) == []
 
 
 async def test_claim_records_the_processing_start_time(
@@ -608,6 +634,164 @@ async def test_failed_document_keeps_its_key_when_removal_fails(
     failed = await _reload(session, document.id)
     assert failed.status == DocumentStatus.FAILED
     assert failed.storage_key == storage_key
+
+
+async def test_large_document_is_persisted_across_multiple_batches(
+    session: AsyncSession,
+    storage: InMemoryStorage,
+    user: RegisteredUser,
+    embeddings: FakeEmbeddings,
+) -> None:
+    content = _big_text_content(150)
+    document = await _pending_document(
+        session, storage, user, 'big.txt', content
+    )
+
+    expected_chunks = chunk_sections(extract_sections('big.txt', content))
+    assert len(expected_chunks) == 150  # sanity: sized for 3 batches
+
+    await ingestion.process_document(session, storage, document.id)
+
+    ready = await _reload(session, document.id)
+    assert ready.status == DocumentStatus.READY
+
+    persisted = await _chunks(session, document.id)
+    assert len(persisted) == 150
+    assert [chunk.chunk_index for chunk in persisted] == list(range(150))
+    assert [chunk.content for chunk in persisted] == [
+        expected.text for expected in expected_chunks
+    ]
+    assert [chunk.page_number for chunk in persisted] == [
+        expected.page_number for expected in expected_chunks
+    ]
+    assert {chunk.organization_id for chunk in persisted} == {
+        user.organization_id
+    }
+    assert {chunk.document_id for chunk in persisted} == {document.id}
+
+    # Embeddings stayed aligned to their own chunk through the batching.
+    for chunk, expected in zip(persisted, expected_chunks, strict=True):
+        assert chunk.embedding == pytest.approx(
+            fake_embedding(expected.text), rel=1e-4, abs=1e-6
+        )
+
+    # HTTP batching *and* memory batching: 3 separate calls, not one
+    # covering all 150 chunks at once.
+    assert [len(batch) for batch in embeddings.batches] == [64, 64, 22]
+
+
+async def test_embedding_failure_mid_batches_rolls_back_everything(
+    session: AsyncSession,
+    storage: InMemoryStorage,
+    user: RegisteredUser,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    content = _big_text_content(150)
+    document = await _pending_document(
+        session, storage, user, 'big.txt', content
+    )
+    document_id = document.id
+    calls = 0
+
+    async def failing_on_second_batch(
+        client: object, texts: list[str]
+    ) -> list[list[float]]:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise EmbeddingError('The embedding request was rejected')
+        return [fake_embedding(text) for text in texts]
+
+    monkeypatch.setattr(ingestion, 'embed_batch', failing_on_second_batch)
+
+    await ingestion.process_document(session, storage, document_id)
+
+    # The rollback expires every attribute SQLAlchemy tracks on `document`
+    # (including its id), so the id captured above is used from here on.
+    failed = await _reload(session, document_id)
+    assert failed.status == DocumentStatus.FAILED
+    assert failed.processing_error == 'The embedding request was rejected'
+    assert calls == 2
+    assert await _chunks(session, document_id) == []
+
+
+async def test_failure_on_last_batch_rolls_back_earlier_flushed_batches(
+    session: AsyncSession,
+    storage: InMemoryStorage,
+    user: RegisteredUser,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    content = _big_text_content(150)
+    document = await _pending_document(
+        session, storage, user, 'big.txt', content
+    )
+    document_id = document.id
+    calls = 0
+
+    async def failing_on_last_batch(
+        client: object, texts: list[str]
+    ) -> list[list[float]]:
+        nonlocal calls
+        calls += 1
+        if calls == 3:
+            raise EmbeddingError('The embedding request was rejected')
+        return [fake_embedding(text) for text in texts]
+
+    monkeypatch.setattr(ingestion, 'embed_batch', failing_on_last_batch)
+
+    await ingestion.process_document(session, storage, document_id)
+
+    failed = await _reload(session, document_id)
+    # Batches 1 and 2 (128 chunks) were flushed to Postgres successfully
+    # before batch 3 failed; the transaction rollback must undo those
+    # flushes too, not just skip the failed batch.
+    assert failed.status == DocumentStatus.FAILED
+    assert calls == 3
+    assert await _chunks(session, document_id) == []
+
+
+async def test_reprocessing_failure_mid_batches_preserves_old_chunks(
+    session: AsyncSession,
+    storage: InMemoryStorage,
+    user: RegisteredUser,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    content = _big_text_content(150)
+    document = await _pending_document(
+        session, storage, user, 'big.txt', content
+    )
+    document_id = document.id
+    async with session.begin():
+        session.add(
+            DocumentChunk(
+                organization_id=user.organization_id,
+                document_id=document_id,
+                content='stale chunk',
+                embedding=[0.0] * EMBEDDING_DIMENSIONS,
+                chunk_index=0,
+                page_number=None,
+            )
+        )
+    calls = 0
+
+    async def failing_on_second_batch(
+        client: object, texts: list[str]
+    ) -> list[list[float]]:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise TransientEmbeddingError('service unavailable')
+        return [fake_embedding(text) for text in texts]
+
+    monkeypatch.setattr(ingestion, 'embed_batch', failing_on_second_batch)
+
+    with pytest.raises(TransientEmbeddingError):
+        await ingestion.process_document(session, storage, document_id)
+
+    kept = await _reload(session, document_id)
+    assert kept.status == DocumentStatus.PENDING
+    stale = await _chunks(session, document_id)
+    assert [chunk.content for chunk in stale] == ['stale chunk']
 
 
 async def test_giving_up_on_embeddings_also_releases_the_stored_file(
