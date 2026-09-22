@@ -6,6 +6,7 @@ from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
+    Field,
     StringConstraints,
 )
 
@@ -18,8 +19,29 @@ Question = Annotated[
 
 
 class ChatRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            'examples': [
+                {'question': "What is Project Orion's launch code?"},
+                {
+                    'question': 'And what about the backup code?',
+                    'conversation_id': (
+                        'c1b1c6f0-6a3b-4f8e-9c9a-2f6a1e7d9b2a'
+                    ),
+                },
+            ]
+        }
+    )
+
     question: Question
-    conversation_id: UUID | None = None
+    conversation_id: UUID | None = Field(
+        default=None,
+        description=(
+            'Omit on the first message of a conversation. On follow-up '
+            'questions, send the conversation_id returned by the previous '
+            'response.'
+        ),
+    )
 
 
 class SourceResponse(BaseModel):

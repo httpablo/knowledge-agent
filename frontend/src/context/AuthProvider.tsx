@@ -45,8 +45,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     verification.current = null
   }, [])
 
-  // Shared by the startup check and the manual retry, which both enter it in
-  // the `checking` state. A cancelled check never updates the state.
   const verifySession = useCallback(
     (token: string) => {
       cancelVerification()
@@ -91,9 +89,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return cancelVerification
   }, [verifySession, cancelVerification])
 
-  // The token is kept in storage while the check is in error, so the retry
-  // reads that same token. Without one there is no session to recover.
-  // A retry is ignored while a check is already in flight.
   const retrySession = useCallback(() => {
     if (verification.current) {
       return

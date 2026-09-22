@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  JWT_SECRET_KEY: ci-test-secret
+  OPENAI_API_KEY: sk-ci-placeholder
+  OPENAI_CHAT_MODEL: gpt-5-mini
+  STORAGE_ACCESS_KEY: ci-placeholder
+  STORAGE_SECRET_KEY: ci-placeholder
+  DATABASE_URL: postgresql+asyncpg://app:app@localhost:5432/knowledge_agent_test
+  TEST_DATABASE_URL: postgresql+asyncpg://app:app@localhost:5432/knowledge_agent_test
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg17
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: knowledge_agent_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d knowledge_agent_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+          python-version: '3.13'
+
+      - run: uv sync --locked
+
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run alembic upgrade head
+      - run: uv run alembic check
+      - run: uv run pytest -q --cov=. --cov-report=term-missing
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:run
+      - run: npm run build
+
+  infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: docker compose config -q
+
+      - run: docker build -t knowledge-agent-backend:ci ./backend
+      - run: docker build -t knowledge-agent-frontend:ci ./frontend

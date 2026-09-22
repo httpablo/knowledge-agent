@@ -16,6 +16,7 @@ htmlcov/
 node_modules/
 dist/
 *.tsbuildinfo
+coverage/
 
 # Editors / OS
 .vscode/

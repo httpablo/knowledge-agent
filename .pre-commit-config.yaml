@@ -1,0 +1,66 @@
+repos:
+  - repo: local
+    hooks:
+      - id: backend-ruff-check
+        name: backend - ruff check
+        entry: bash -c 'cd backend && uv run ruff check .'
+        language: system
+        files: ^backend/.*\.py$
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: backend-ruff-format
+        name: backend - ruff format --check
+        entry: bash -c 'cd backend && uv run ruff format --check .'
+        language: system
+        files: ^backend/.*\.py$
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: frontend-oxlint
+        name: frontend - oxlint
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: frontend-typecheck
+        name: frontend - typescript typecheck
+        entry: bash -c 'cd frontend && npm run typecheck'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: backend-pytest
+        name: backend - pytest (full suite)
+        entry: bash -c 'cd backend && uv run pytest -q'
+        language: system
+        files: ^backend/
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: frontend-vitest
+        name: frontend - vitest (full suite)
+        entry: bash -c 'cd frontend && npm run test:run'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: frontend-build
+        name: frontend - build
+        entry: bash -c 'cd frontend && npm run build'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: compose-config
+        name: infra - docker compose config
+        entry: docker compose config -q
+        language: system
+        files: ^(docker-compose\.yml|backend/Dockerfile|frontend/Dockerfile)$
+        pass_filenames: false
+        stages: [pre-push]
