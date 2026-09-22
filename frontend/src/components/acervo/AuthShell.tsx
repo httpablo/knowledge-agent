@@ -20,10 +20,7 @@ function AuthShell({
   return (
     <div className="grid min-h-dvh grid-cols-1 bg-[var(--paper)] font-[family-name:var(--font-sans)] text-[var(--ink)] min-[900px]:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
       <section className="flex flex-col px-4 py-6 min-[900px]:px-12 min-[900px]:py-6">
-        <header className="flex items-center justify-between gap-4">
-          <p className="font-[family-name:var(--font-serif)] text-[22px] leading-7 font-medium tracking-[-0.005em]">
-            Acervo
-          </p>
+        <header className="flex items-center justify-end gap-4">
           <LanguageSwitcher
             language={language}
             onChange={onLanguageChange}

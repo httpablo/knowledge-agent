@@ -67,7 +67,7 @@ function Field({
           aria-describedby={describedBy}
           className={[
             'min-h-10 w-full rounded-[var(--radius-md)] border bg-[var(--paper-raised)] px-3 py-[9px] font-[family-name:var(--font-sans)] text-sm text-[var(--ink)] transition-colors duration-[120ms] placeholder:text-[var(--ink-subtle)] hover:border-[var(--ink-muted)] focus:border-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus)]',
-            isPassword ? 'pr-[84px]' : '',
+            isPassword ? 'pr-10' : '',
             error ? 'border-[var(--danger)]' : 'border-[var(--line-strong)]',
           ].join(' ')}
         />
@@ -76,9 +76,10 @@ function Field({
             type="button"
             onClick={() => setRevealed((current) => !current)}
             aria-pressed={revealed}
-            className="absolute top-1 right-1 bottom-1 rounded-[var(--radius-sm)] px-2 font-[family-name:var(--font-sans)] text-[13px] leading-4 font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus)]"
+            aria-label={revealed ? hideLabel : showLabel}
+            className="absolute top-1 right-1 bottom-1 flex w-8 items-center justify-center rounded-[var(--radius-sm)] text-[var(--ink-muted)] transition-colors duration-[120ms] hover:text-[var(--ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus)]"
           >
-            {revealed ? hideLabel : showLabel}
+            <Icon name={revealed ? 'eye-off' : 'eye'} size={18} />
           </button>
         )}
       </div>
