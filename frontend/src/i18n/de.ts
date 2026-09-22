@@ -57,8 +57,10 @@ const de: Translation = {
   noDocuments: 'Noch keine Dokumente.',
   deleteDocumentAction: '{{name}} löschen',
   deleteDocument: 'Löschen',
+  deleteDocumentTitle: 'Dokument löschen',
   deleteDocumentConfirm:
     '{{name}} löschen? Das kann nicht rückgängig gemacht werden.',
+  cancel: 'Abbrechen',
   deleteDocumentError:
     'Das Dokument konnte nicht gelöscht werden. Versuchen Sie es erneut.',
   documentsLoadError: 'Ihre Dokumente konnten nicht geladen werden.',

@@ -49,8 +49,10 @@ const en = {
   noDocuments: 'No documents yet.',
   deleteDocumentAction: 'Delete {{name}}',
   deleteDocument: 'Delete',
+  deleteDocumentTitle: 'Delete document',
   deleteDocumentConfirm:
     'Delete {{name}}? This cannot be undone.',
+  cancel: 'Cancel',
   deleteDocumentError: 'We couldn’t delete this document. Please try again.',
   documentsLoadError: 'We couldn’t load your documents.',
   tryAgain: 'Try again',

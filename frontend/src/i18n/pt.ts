@@ -51,7 +51,9 @@ const pt: Translation = {
   noDocuments: 'Nenhum documento ainda.',
   deleteDocumentAction: 'Excluir {{name}}',
   deleteDocument: 'Excluir',
+  deleteDocumentTitle: 'Excluir documento',
   deleteDocumentConfirm: 'Excluir {{name}}? Essa ação não pode ser desfeita.',
+  cancel: 'Cancelar',
   deleteDocumentError:
     'Não foi possível excluir este documento. Tente novamente.',
   documentsLoadError: 'Não foi possível carregar seus documentos.',

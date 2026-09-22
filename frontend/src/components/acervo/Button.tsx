@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import Icon from './Icon'
 import type { IconName } from './Icon'
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost'
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
 type ButtonSize = 'md' | 'sm'
 
 type ButtonProps = Omit<
@@ -27,6 +27,8 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
     'border-[var(--line-strong)] bg-[var(--paper-raised)] text-[var(--ink)] hover:enabled:bg-[var(--paper-sunken)]',
   ghost:
     'border-transparent bg-transparent text-[var(--ink)] hover:enabled:bg-[var(--paper-sunken)]',
+  danger:
+    'border-transparent bg-[var(--danger-soft)] text-[var(--danger)] hover:enabled:bg-[var(--danger)] hover:enabled:text-[var(--on-accent)]',
 }
 
 function Button({

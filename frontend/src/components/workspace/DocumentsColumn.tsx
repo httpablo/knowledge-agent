@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { DocumentResponse, DocumentStatus } from '../../api/documents'
 import Button from '../acervo/Button'
+import ConfirmDialog from '../acervo/ConfirmDialog'
 import Icon from '../acervo/Icon'
 import StatusBadge from '../acervo/StatusBadge'
 import type { BadgeStatus } from '../acervo/StatusBadge'
@@ -30,6 +32,7 @@ function DocumentRow({
 }) {
   const { t } = useTranslation()
   const canDelete = document.status === 'READY' || document.status === 'FAILED'
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   return (
     <li className="grid grid-cols-[28px_minmax(0,1fr)_28px] items-start gap-3 border-t border-[var(--line)] px-5 py-3">
@@ -63,25 +66,31 @@ function DocumentRow({
         )}
       </div>
       {canDelete && (
-        <Button
-          variant="ghost"
-          size="sm"
-          iconOnly
-          icon="trash"
-          busy={deleting}
-          disabled={deleting}
-          tooltip={t('deleteDocument')}
-          aria-label={t('deleteDocumentAction', { name: document.filename })}
-          onClick={() => {
-            if (
-              window.confirm(
-                t('deleteDocumentConfirm', { name: document.filename }),
-              )
-            ) {
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon="trash"
+            busy={deleting}
+            disabled={deleting}
+            tooltip={t('deleteDocument')}
+            aria-label={t('deleteDocumentAction', { name: document.filename })}
+            onClick={() => setConfirmOpen(true)}
+          />
+          <ConfirmDialog
+            open={confirmOpen}
+            title={t('deleteDocumentTitle')}
+            message={t('deleteDocumentConfirm', { name: document.filename })}
+            confirmLabel={t('deleteDocument')}
+            cancelLabel={t('cancel')}
+            onCancel={() => setConfirmOpen(false)}
+            onConfirm={() => {
+              setConfirmOpen(false)
               onDelete()
-            }
-          }}
-        />
+            }}
+          />
+        </>
       )}
     </li>
   )
