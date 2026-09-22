@@ -50,6 +50,7 @@ const pt: Translation = {
   loadingDocuments: 'Carregando documentos…',
   noDocuments: 'Nenhum documento ainda.',
   deleteDocumentAction: 'Excluir {{name}}',
+  deleteDocument: 'Excluir',
   deleteDocumentConfirm: 'Excluir {{name}}? Essa ação não pode ser desfeita.',
   deleteDocumentError:
     'Não foi possível excluir este documento. Tente novamente.',
@@ -74,6 +75,7 @@ const pt: Translation = {
   dropzoneTitle: 'Arraste arquivos aqui',
   dropzoneDropping: 'Solte para enviar',
   chooseFiles: 'Escolher arquivos',
+  uploadingFiles: 'Enviando…',
   addDocumentsModalTitle: 'Adicionar documentos',
   addDocumentsModalLead:
     'Os arquivos ficam disponíveis para perguntas assim que o processamento terminar.',
@@ -100,7 +102,6 @@ const pt: Translation = {
   searchingDocuments_one: 'Buscando em {{count}} documento',
   searchingDocuments_other: 'Buscando em {{count}} documentos',
   answerNotFound: 'Não encontrei essa informação nos seus documentos.',
-  aiGeneratedNote: 'Gerada por IA. Confira as fontes antes de usar.',
   chatUnavailable:
     'Não foi possível obter uma resposta agora. Tente novamente.',
   invalidQuestion: 'Esta pergunta não é válida. Verifique e tente novamente.',

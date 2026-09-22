@@ -56,6 +56,7 @@ const de: Translation = {
   loadingDocuments: 'Dokumente werden geladen…',
   noDocuments: 'Noch keine Dokumente.',
   deleteDocumentAction: '{{name}} löschen',
+  deleteDocument: 'Löschen',
   deleteDocumentConfirm:
     '{{name}} löschen? Das kann nicht rückgängig gemacht werden.',
   deleteDocumentError:
@@ -83,6 +84,7 @@ const de: Translation = {
   dropzoneTitle: 'Dateien hierher ziehen',
   dropzoneDropping: 'Zum Hochladen loslassen',
   chooseFiles: 'Dateien auswählen',
+  uploadingFiles: 'Wird hochgeladen…',
   addDocumentsModalTitle: 'Dokumente hinzufügen',
   addDocumentsModalLead:
     'Dateien stehen für Fragen bereit, sobald die Verarbeitung abgeschlossen ist.',
@@ -112,8 +114,6 @@ const de: Translation = {
   searchingDocuments_other: 'Suche in {{count}} Dokumenten',
   answerNotFound:
     'Ich konnte diese Information in Ihren Dokumenten nicht finden.',
-  aiGeneratedNote:
-    'KI-generiert. Prüfen Sie die Quellen, bevor Sie sich darauf verlassen.',
   chatUnavailable:
     'Derzeit konnte keine Antwort erzeugt werden. Versuchen Sie es erneut.',
   invalidQuestion:

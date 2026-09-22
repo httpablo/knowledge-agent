@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { Language } from '../../i18n'
+import { toggleTheme } from '../../theme'
+import Button from './Button'
 import LanguageSwitcher from './LanguageSwitcher'
 
 function AuthShell({
@@ -25,6 +27,14 @@ function AuthShell({
             language={language}
             onChange={onLanguageChange}
             label={t('languageLabel')}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon="moon"
+            aria-label={t('toggleTheme')}
+            onClick={toggleTheme}
           />
         </header>
 

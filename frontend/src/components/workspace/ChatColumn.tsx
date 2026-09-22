@@ -33,9 +33,6 @@ function MessageBlock({ message }: { message: ChatMessage }) {
       >
         {notFound ? t('answerNotFound') : message.content}
       </p>
-      <p className="font-[family-name:var(--font-sans)] text-xs leading-4 text-[var(--ink-muted)]">
-        {t('aiGeneratedNote')}
-      </p>
     </div>
   )
 }
@@ -43,11 +40,13 @@ function MessageBlock({ message }: { message: ChatMessage }) {
 function ChatColumn({
   documentCount,
   readyCount,
+  uploading,
   onFiles,
   chat,
 }: {
   documentCount: number
   readyCount: number
+  uploading: boolean
   onFiles: (files: File[]) => void
   chat: UseChatResult
 }) {
@@ -136,6 +135,8 @@ function ChatColumn({
                   size: MAX_UPLOAD_SIZE_MB,
                 })}
                 actionLabel={t('chooseFiles')}
+                busyLabel={t('uploadingFiles')}
+                busy={uploading}
                 onFiles={onFiles}
               />
             </div>

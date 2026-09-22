@@ -70,6 +70,7 @@ function DocumentRow({
           icon="trash"
           busy={deleting}
           disabled={deleting}
+          tooltip={t('deleteDocument')}
           aria-label={t('deleteDocumentAction', { name: document.filename })}
           onClick={() => {
             if (
@@ -175,7 +176,7 @@ function DocumentsColumn({
   return (
     <aside
       aria-label={t('documents')}
-      className="flex min-h-0 w-full flex-col border-[var(--line)] lg:w-80 lg:shrink-0 lg:border-r"
+      className="flex min-h-0 w-full flex-1 flex-col border-[var(--line)] lg:w-80 lg:shrink-0 lg:border-r"
     >
       <div className="flex items-center gap-2 px-5 pt-5 pb-3">
         <h2 className="flex-1 font-[family-name:var(--font-serif)] text-xl leading-[26px] font-medium text-[var(--ink)]">
@@ -188,7 +189,9 @@ function DocumentsColumn({
           {t('addDocuments')}
         </Button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto">{renderBody()}</div>
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+        {renderBody()}
+      </div>
       <p className="border-t border-[var(--line)] px-5 py-3 font-[family-name:var(--font-sans)] text-xs leading-4 text-[var(--ink-muted)]">
         {t('dropAnywhereHint')}{' '}
         {t('supportedDocumentFormats', { size: MAX_UPLOAD_SIZE_MB })}

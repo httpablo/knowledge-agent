@@ -27,6 +27,7 @@ function WorkspacePage() {
   const auth = useAuth()
   const [tab, setTab] = useState<MobileTab>('documents')
   const [modalOpen, setModalOpen] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [rejected, setRejected] = useState<RejectedFile[]>([])
   const [pageDragCount, setPageDragCount] = useState(0)
 
@@ -38,11 +39,16 @@ function WorkspacePage() {
   }
 
   async function handleFiles(files: File[]) {
+    setUploading(true)
     const rejectedFiles = await docs.uploadFiles(files)
+    setUploading(false)
 
     if (rejectedFiles.length > 0) {
       setRejected(rejectedFiles)
       setModalOpen(true)
+    } else {
+      setRejected([])
+      setModalOpen(false)
     }
   }
 
@@ -118,19 +124,19 @@ function WorkspacePage() {
 
       <div
         onDragEnter={(event) => {
-          if (!modalOpen && hasFiles(event)) {
+          if (!modalOpen && !uploading && hasFiles(event)) {
             event.preventDefault()
             setPageDragCount((current) => current + 1)
           }
         }}
         onDragOver={(event) => {
-          if (!modalOpen) {
+          if (!modalOpen && !uploading) {
             event.preventDefault()
           }
         }}
         onDragLeave={() => setPageDragCount((current) => Math.max(0, current - 1))}
         onDrop={(event) => {
-          if (modalOpen) {
+          if (modalOpen || uploading) {
             return
           }
 
@@ -165,6 +171,7 @@ function WorkspacePage() {
           <ChatColumn
             documentCount={docs.documents.length}
             readyCount={docs.readyCount}
+            uploading={uploading}
             onFiles={handleFiles}
             chat={chat}
           />
@@ -193,6 +200,7 @@ function WorkspacePage() {
 
       <UploadModal
         open={modalOpen}
+        uploading={uploading}
         rejected={rejected}
         onFiles={handleFiles}
         onClose={closeModal}

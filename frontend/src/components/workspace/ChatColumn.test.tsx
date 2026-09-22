@@ -29,6 +29,7 @@ function renderChat(chat: UseChatResult) {
     <ChatColumn
       documentCount={1}
       readyCount={1}
+      uploading={false}
       onFiles={vi.fn()}
       chat={chat}
     />,

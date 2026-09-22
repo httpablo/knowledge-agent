@@ -12,11 +12,15 @@ function Dropzone({
   title,
   limits,
   actionLabel,
+  busyLabel,
+  busy,
   onFiles,
 }: {
   title: string
   limits: string
   actionLabel: string
+  busyLabel?: string
+  busy?: boolean
   onFiles: (files: File[]) => void
 }) {
   const [dragging, setDragging] = useState(false)
@@ -25,18 +29,24 @@ function Dropzone({
   return (
     <div
       onDragEnter={(event) => {
-        if (hasFiles(event)) {
+        if (!busy && hasFiles(event)) {
           event.preventDefault()
           event.stopPropagation()
           setDragging(true)
         }
       }}
       onDragOver={(event) => {
+        if (busy) {
+          return
+        }
         event.preventDefault()
         event.stopPropagation()
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={(event) => {
+        if (busy) {
+          return
+        }
         event.preventDefault()
         event.stopPropagation()
         setDragging(false)
@@ -57,8 +67,13 @@ function Dropzone({
       <p className="font-[family-name:var(--font-sans)] text-[15px] leading-[22px] font-semibold text-[var(--ink)]">
         {title}
       </p>
-      <Button variant="secondary" onClick={() => inputRef.current?.click()}>
-        {actionLabel}
+      <Button
+        variant="secondary"
+        busy={busy}
+        disabled={busy}
+        onClick={() => inputRef.current?.click()}
+      >
+        {busy ? busyLabel : actionLabel}
       </Button>
       <input
         ref={inputRef}
@@ -66,6 +81,7 @@ function Dropzone({
         multiple
         accept=".pdf,.txt,.docx"
         hidden
+        disabled={busy}
         onChange={(event) => {
           const files = Array.from(event.target.files ?? [])
           if (files.length > 0) {

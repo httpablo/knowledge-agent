@@ -48,6 +48,7 @@ const en = {
   loadingDocuments: 'Loading documents…',
   noDocuments: 'No documents yet.',
   deleteDocumentAction: 'Delete {{name}}',
+  deleteDocument: 'Delete',
   deleteDocumentConfirm:
     'Delete {{name}}? This cannot be undone.',
   deleteDocumentError: 'We couldn’t delete this document. Please try again.',
@@ -71,6 +72,7 @@ const en = {
   dropzoneTitle: 'Drop files here',
   dropzoneDropping: 'Drop to upload',
   chooseFiles: 'Choose files',
+  uploadingFiles: 'Uploading…',
   addDocumentsModalTitle: 'Add documents',
   addDocumentsModalLead:
     'Files become available for questions once processing finishes.',
@@ -98,7 +100,6 @@ const en = {
   searchingDocuments_one: 'Searching {{count}} document',
   searchingDocuments_other: 'Searching {{count}} documents',
   answerNotFound: 'I couldn’t find that in your documents.',
-  aiGeneratedNote: 'AI-generated. Check the sources before relying on it.',
   chatUnavailable: 'We couldn’t get an answer right now. Please try again.',
   invalidQuestion: 'This question isn’t valid. Please check it and try again.',
   sourcesTitle: 'Sources for this answer',

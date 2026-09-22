@@ -9,11 +9,13 @@ import type { RejectedFile } from './useDocuments'
 
 function UploadModal({
   open,
+  uploading,
   rejected,
   onFiles,
   onClose,
 }: {
   open: boolean
+  uploading: boolean
   rejected: RejectedFile[]
   onFiles: (files: File[]) => void
   onClose: () => void
@@ -39,8 +41,13 @@ function UploadModal({
     <dialog
       ref={dialogRef}
       onClose={onClose}
+      onCancel={(event) => {
+        if (uploading) {
+          event.preventDefault()
+        }
+      }}
       onClick={(event) => {
-        if (event.target === dialogRef.current) {
+        if (!uploading && event.target === dialogRef.current) {
           onClose()
         }
       }}
@@ -59,8 +66,9 @@ function UploadModal({
           <button
             type="button"
             onClick={onClose}
+            disabled={uploading}
             aria-label={t('close')}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[var(--ink)] transition-colors duration-[120ms] hover:bg-[var(--paper-sunken)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus)]"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[var(--ink)] transition-colors duration-[120ms] hover:enabled:bg-[var(--paper-sunken)] disabled:cursor-not-allowed disabled:text-[var(--ink-muted)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--focus)]"
           >
             <Icon name="x" size={16} />
           </button>
@@ -70,6 +78,8 @@ function UploadModal({
           title={t('dropzoneTitle')}
           limits={t('supportedDocumentFormats', { size: MAX_UPLOAD_SIZE_MB })}
           actionLabel={t('chooseFiles')}
+          busyLabel={t('uploadingFiles')}
+          busy={uploading}
           onFiles={onFiles}
         />
 
@@ -100,7 +110,7 @@ function UploadModal({
           <p className="flex-1 font-[family-name:var(--font-sans)] text-xs leading-4 text-[var(--ink-muted)]">
             {t('modalCloseHint')}
           </p>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={onClose} disabled={uploading}>
             {t('close')}
           </Button>
         </div>
