@@ -73,6 +73,8 @@ const en = {
   dropzoneDropping: 'Drop to upload',
   chooseFiles: 'Choose files',
   uploadingFiles: 'Uploading…',
+  documentsAdded_one: '{{count}} document added',
+  documentsAdded_other: '{{count}} documents added',
   addDocumentsModalTitle: 'Add documents',
   addDocumentsModalLead:
     'Files become available for questions once processing finishes.',

@@ -85,6 +85,8 @@ const de: Translation = {
   dropzoneDropping: 'Zum Hochladen loslassen',
   chooseFiles: 'Dateien auswählen',
   uploadingFiles: 'Wird hochgeladen…',
+  documentsAdded_one: '{{count}} Dokument hinzugefügt',
+  documentsAdded_other: '{{count}} Dokumente hinzugefügt',
   addDocumentsModalTitle: 'Dokumente hinzufügen',
   addDocumentsModalLead:
     'Dateien stehen für Fragen bereit, sobald die Verarbeitung abgeschlossen ist.',

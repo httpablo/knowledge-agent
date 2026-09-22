@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import Button from '../components/acervo/Button'
 import Icon from '../components/acervo/Icon'
 import LanguageSwitcher from '../components/acervo/LanguageSwitcher'
+import Toast from '../components/acervo/Toast'
 import ChatColumn from '../components/workspace/ChatColumn'
 import DocumentsColumn from '../components/workspace/DocumentsColumn'
 import SourcesColumn from '../components/workspace/SourcesColumn'
@@ -30,6 +31,7 @@ function WorkspacePage() {
   const [uploading, setUploading] = useState(false)
   const [rejected, setRejected] = useState<RejectedFile[]>([])
   const [pageDragCount, setPageDragCount] = useState(0)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const docs = useDocuments(auth.status === 'authenticated' ? auth.token : '')
   const chat = useChat(auth.status === 'authenticated' ? auth.token : '')
@@ -42,6 +44,12 @@ function WorkspacePage() {
     setUploading(true)
     const rejectedFiles = await docs.uploadFiles(files)
     setUploading(false)
+
+    const addedCount = files.length - rejectedFiles.length
+
+    if (addedCount > 0) {
+      setToastMessage(t('documentsAdded', { count: addedCount }))
+    }
 
     if (rejectedFiles.length > 0) {
       setRejected(rejectedFiles)
@@ -197,6 +205,13 @@ function WorkspacePage() {
       <p aria-live="polite" className="sr-only">
         {docs.announcement}
       </p>
+
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          onDismiss={() => setToastMessage(null)}
+        />
+      )}
 
       <UploadModal
         open={modalOpen}

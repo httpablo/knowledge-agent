@@ -76,6 +76,8 @@ const pt: Translation = {
   dropzoneDropping: 'Solte para enviar',
   chooseFiles: 'Escolher arquivos',
   uploadingFiles: 'Enviando…',
+  documentsAdded_one: '{{count}} documento adicionado',
+  documentsAdded_other: '{{count}} documentos adicionados',
   addDocumentsModalTitle: 'Adicionar documentos',
   addDocumentsModalLead:
     'Os arquivos ficam disponíveis para perguntas assim que o processamento terminar.',
