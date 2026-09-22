@@ -16,6 +16,7 @@ type FieldProps = {
   onBlur?: (event: FocusEvent<HTMLInputElement>) => void
   autoComplete?: string
   required?: boolean
+  maxLength?: number
   showLabel?: string
   hideLabel?: string
 }
@@ -31,6 +32,7 @@ function Field({
   onBlur,
   autoComplete,
   required,
+  maxLength,
   showLabel,
   hideLabel,
 }: FieldProps) {
@@ -63,6 +65,7 @@ function Field({
           onBlur={onBlur}
           autoComplete={autoComplete}
           required={required}
+          maxLength={maxLength}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
           className={[

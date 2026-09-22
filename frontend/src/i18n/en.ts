@@ -25,6 +25,13 @@ const en = {
   signInUnavailable:
     'We couldn’t sign you in right now. Please try again.',
   name: 'Name',
+  signupLead:
+    'Each organization has its own document base, isolated from all others.',
+  alreadyHaveAccount: 'Already have an account?',
+  confirmPassword: 'Confirm password',
+  passwordHint: 'At least 8 characters.',
+  passwordTooShort: 'Password must be at least 8 characters.',
+  passwordMismatch: 'Passwords don’t match.',
   creatingAccount: 'Creating account…',
   emailAlreadyExists: 'An account with this email already exists.',
   registrationUnavailable:

@@ -32,6 +32,13 @@ const de: Translation = {
   signInUnavailable:
     'Die Anmeldung ist derzeit nicht möglich. Versuchen Sie es erneut.',
   name: 'Name',
+  signupLead:
+    'Jede Organisation hat eine eigene, von allen anderen getrennte Dokumentenbasis.',
+  alreadyHaveAccount: 'Schon ein Konto?',
+  confirmPassword: 'Passwort bestätigen',
+  passwordHint: 'Mindestens 8 Zeichen.',
+  passwordTooShort: 'Das Passwort muss mindestens 8 Zeichen lang sein.',
+  passwordMismatch: 'Die Passwörter stimmen nicht überein.',
   creatingAccount: 'Konto wird erstellt…',
   emailAlreadyExists:
     'Für diese E-Mail-Adresse existiert bereits ein Konto.',

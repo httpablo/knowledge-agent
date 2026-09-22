@@ -1,6 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
 
-import CenteredPanel from './components/CenteredPanel'
 import GuestOnlyRoute from './components/auth/GuestOnlyRoute'
 import RequireAuth from './components/auth/RequireAuth'
 import LoginPage from './pages/LoginPage'
@@ -30,9 +29,7 @@ function App() {
         path="/register"
         element={
           <GuestOnlyRoute>
-            <CenteredPanel>
-              <RegisterPage />
-            </CenteredPanel>
+            <RegisterPage />
           </GuestOnlyRoute>
         }
       />

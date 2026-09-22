@@ -28,6 +28,12 @@ const pt: Translation = {
   invalidInput: 'Verifique as informações digitadas.',
   signInUnavailable: 'Não foi possível entrar agora. Tente novamente.',
   name: 'Nome',
+  signupLead: 'Cada organização tem sua própria base, isolada das demais.',
+  alreadyHaveAccount: 'Já tem conta?',
+  confirmPassword: 'Confirmar senha',
+  passwordHint: 'Mínimo de 8 caracteres.',
+  passwordTooShort: 'A senha precisa de pelo menos 8 caracteres.',
+  passwordMismatch: 'As senhas não coincidem.',
   creatingAccount: 'Criando conta…',
   emailAlreadyExists: 'Já existe uma conta com este e-mail.',
   registrationUnavailable:
