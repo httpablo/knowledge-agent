@@ -70,6 +70,22 @@ const de: Translation = {
   documentStatusProcessing: 'Wird verarbeitet',
   documentStatusReady: 'Bereit',
   documentStatusFailed: 'Fehlgeschlagen',
+  processingErrorEncryptedPdf:
+    'Dieses PDF ist verschlüsselt und kann nicht verarbeitet werden.',
+  processingErrorNoExtractableText:
+    'In diesem Dokument wurde kein lesbarer Text gefunden. Gescannte oder reine Bild-PDFs werden nicht unterstützt.',
+  processingErrorInvalidDocx:
+    'Der Inhalt dieser Datei stimmt nicht mit ihrer Erweiterung überein.',
+  processingErrorDocxTooLarge:
+    'Diese DOCX-Datei ist zu groß, um verarbeitet zu werden.',
+  processingErrorParsingFailed: 'Diese Datei konnte nicht gelesen werden.',
+  processingErrorFileUnreadable:
+    'Die hochgeladene Datei konnte nicht gelesen werden. Bitte versuchen Sie es erneut.',
+  processingErrorEmbeddingFailed:
+    'Der Inhalt dieses Dokuments konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut.',
+  processingErrorEmbeddingUnavailable:
+    'Der KI-Dienst war während der Verarbeitung dieses Dokuments nicht verfügbar. Bitte versuchen Sie es erneut.',
+  processingErrorUnknown: 'Dieses Dokument konnte nicht verarbeitet werden.',
   supportedDocumentFormats:
     'Unterstützte Formate: PDF, TXT, DOCX. Maximale Größe: {{size}} MB.',
   unsupportedFileType:

@@ -61,6 +61,21 @@ const en = {
   documentStatusProcessing: 'Processing',
   documentStatusReady: 'Ready',
   documentStatusFailed: 'Failed',
+  processingErrorEncryptedPdf:
+    'This PDF is encrypted and can’t be processed.',
+  processingErrorNoExtractableText:
+    'No readable text was found in this document. Scanned or image-only files aren’t supported.',
+  processingErrorInvalidDocx:
+    'This file’s content doesn’t match its extension.',
+  processingErrorDocxTooLarge: 'This DOCX file is too large to process.',
+  processingErrorParsingFailed: 'This file could not be read.',
+  processingErrorFileUnreadable:
+    'We couldn’t read the uploaded file. Please try uploading it again.',
+  processingErrorEmbeddingFailed:
+    'We couldn’t process this document’s content. Please try uploading it again.',
+  processingErrorEmbeddingUnavailable:
+    'The AI service was unavailable while processing this document. Please try uploading it again.',
+  processingErrorUnknown: 'This document could not be processed.',
   supportedDocumentFormats:
     'Accepted formats: PDF, TXT, DOCX. Maximum size: {{size}} MB.',
   unsupportedFileType: 'Unsupported file type. Use PDF, TXT, or DOCX.',

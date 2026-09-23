@@ -15,6 +15,7 @@ from models import (
     Document,
     DocumentChunk,
     DocumentStatus,
+    ProcessingErrorCode,
 )
 from services import ingestion
 from services.chunking import chunk_sections
@@ -266,7 +267,7 @@ async def test_permanent_embedding_failure_marks_document_failed(
 
     failed = await _reload(session, document_id)
     assert failed.status == DocumentStatus.FAILED
-    assert failed.processing_error == 'The embedding request was rejected'
+    assert failed.processing_error == ProcessingErrorCode.EMBEDDING_FAILED
     assert await _chunks(session, document_id) == []
 
 
@@ -389,10 +390,7 @@ async def test_document_without_text_fails_before_embedding(
 
     failed = await _reload(session, document.id)
     assert failed.status == DocumentStatus.FAILED
-    assert failed.processing_error == (
-        'The PDF has no extractable text; scanned or image-only PDFs '
-        'are not supported'
-    )
+    assert failed.processing_error == ProcessingErrorCode.NO_EXTRACTABLE_TEXT
     assert embeddings.batches == []
 
 
@@ -406,7 +404,7 @@ async def test_download_failure_marks_document_failed(
 
     failed = await _reload(session, document.id)
     assert failed.status == DocumentStatus.FAILED
-    assert failed.processing_error == 'Could not read the uploaded file'
+    assert failed.processing_error == ProcessingErrorCode.FILE_UNREADABLE
 
 
 async def test_parsing_failure_logs_traceback_but_stores_sanitized_error(
@@ -423,7 +421,7 @@ async def test_parsing_failure_logs_traceback_but_stores_sanitized_error(
         await ingestion.process_document(session, storage, document.id)
 
     failed = await _reload(session, document.id)
-    assert failed.processing_error == 'The file could not be parsed'
+    assert failed.processing_error == ProcessingErrorCode.PARSING_FAILED
     (record,) = _ingestion_records(caplog)
     assert record.exc_info
     assert 'Traceback' in caplog.text
@@ -554,7 +552,7 @@ def test_worker_task_fails_the_document_on_the_last_retry(
 
     status, error = asyncio.run(_outcome(document_id))
     assert status == DocumentStatus.FAILED
-    assert error == ingestion_task.EMBEDDINGS_UNAVAILABLE
+    assert error == ProcessingErrorCode.EMBEDDING_UNAVAILABLE
 
 
 async def _outcome(document_id: UUID) -> tuple[DocumentStatus, str]:
@@ -710,7 +708,7 @@ async def test_embedding_failure_mid_batches_rolls_back_everything(
     # (including its id), so the id captured above is used from here on.
     failed = await _reload(session, document_id)
     assert failed.status == DocumentStatus.FAILED
-    assert failed.processing_error == 'The embedding request was rejected'
+    assert failed.processing_error == ProcessingErrorCode.EMBEDDING_FAILED
     assert calls == 2
     assert await _chunks(session, document_id) == []
 
@@ -800,11 +798,14 @@ async def test_giving_up_on_embeddings_also_releases_the_stored_file(
     document = await _pending_document(session, storage, user)
 
     await ingestion.fail_pending_document(
-        session, storage, document.id, 'embeddings unavailable'
+        session,
+        storage,
+        document.id,
+        ProcessingErrorCode.EMBEDDING_UNAVAILABLE,
     )
 
     failed = await _reload(session, document.id)
     assert failed.status == DocumentStatus.FAILED
-    assert failed.processing_error == 'embeddings unavailable'
+    assert failed.processing_error == ProcessingErrorCode.EMBEDDING_UNAVAILABLE
     assert failed.storage_key is None
     assert storage.objects == {}

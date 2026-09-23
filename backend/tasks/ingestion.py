@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from core.settings import settings
+from models import ProcessingErrorCode
 from services import ingestion
 from services.embeddings import TransientEmbeddingError
 from services.storage import storage
@@ -16,9 +17,6 @@ logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 5
 TRANSIENT_RETRY_DELAY = 30
-EMBEDDINGS_UNAVAILABLE = (
-    'Could not generate embeddings; the service was unavailable'
-)
 
 engine = create_async_engine(
     settings.DATABASE_URL.get_secret_value(), poolclass=NullPool
@@ -63,7 +61,10 @@ async def _process_document(document_id: UUID) -> None:
 async def _fail_document(document_id: UUID) -> None:
     async with _session() as session:
         await ingestion.fail_pending_document(
-            session, storage, document_id, EMBEDDINGS_UNAVAILABLE
+            session,
+            storage,
+            document_id,
+            ProcessingErrorCode.EMBEDDING_UNAVAILABLE,
         )
 
 

@@ -7,7 +7,11 @@ import ConfirmDialog from '../acervo/ConfirmDialog'
 import Icon from '../acervo/Icon'
 import StatusBadge from '../acervo/StatusBadge'
 import type { BadgeStatus } from '../acervo/StatusBadge'
-import { MAX_UPLOAD_SIZE_MB, STATUS_LABEL_KEYS } from './useDocuments'
+import {
+  MAX_UPLOAD_SIZE_MB,
+  STATUS_LABEL_KEYS,
+  processingErrorKeyFor,
+} from './useDocuments'
 import type { UseDocumentsResult } from './useDocuments'
 
 const BADGE_STATUS: Record<DocumentStatus, BadgeStatus> = {
@@ -56,7 +60,7 @@ function DocumentRow({
         </div>
         {document.status === 'FAILED' && document.processing_error && (
           <p className="mt-2 max-w-[42ch] font-[family-name:var(--font-sans)] text-xs leading-4 wrap-anywhere text-[var(--danger)]">
-            {document.processing_error}
+            {t(processingErrorKeyFor(document.processing_error))}
           </p>
         )}
         {deleteFailed && (

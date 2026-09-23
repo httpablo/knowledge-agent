@@ -77,7 +77,7 @@ async def test_list_is_ordered_from_newest_to_oldest(
         (DocumentStatus.PENDING, None),
         (DocumentStatus.PROCESSING, None),
         (DocumentStatus.READY, None),
-        (DocumentStatus.FAILED, 'The file could not be parsed'),
+        (DocumentStatus.FAILED, 'PARSING_FAILED'),
     ],
 )
 async def test_every_status_is_exposed(

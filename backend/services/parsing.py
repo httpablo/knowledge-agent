@@ -8,6 +8,8 @@ from docx import Document as DocxDocument
 from docx.table import Table
 from pypdf import PageObject, PdfReader
 
+from models import ProcessingErrorCode
+
 DOCX_REQUIRED_PARTS = {
     '[Content_Types].xml',
     '_rels/.rels',
@@ -24,7 +26,9 @@ class ExtractedSection:
 
 
 class DocumentParsingError(Exception):
-    pass
+    def __init__(self, code: ProcessingErrorCode, message: str) -> None:
+        super().__init__(message)
+        self.code = code
 
 
 def extract_sections(filename: str, content: bytes) -> list[ExtractedSection]:
@@ -34,17 +38,25 @@ def extract_sections(filename: str, content: bytes) -> list[ExtractedSection]:
     except DocumentParsingError:
         raise
     except Exception as exc:
-        raise DocumentParsingError('The file could not be parsed') from exc
+        raise DocumentParsingError(
+            ProcessingErrorCode.PARSING_FAILED, 'The file could not be parsed'
+        ) from exc
 
     if not sections:
-        raise DocumentParsingError('The document has no extractable text')
+        raise DocumentParsingError(
+            ProcessingErrorCode.NO_EXTRACTABLE_TEXT,
+            'The document has no extractable text',
+        )
     return sections
 
 
 def _extract_pdf(content: bytes) -> list[ExtractedSection]:
     reader = PdfReader(BytesIO(content))
     if reader.is_encrypted:
-        raise DocumentParsingError('Encrypted PDFs are not supported')
+        raise DocumentParsingError(
+            ProcessingErrorCode.ENCRYPTED_PDF,
+            'Encrypted PDFs are not supported',
+        )
 
     sections = []
     for page_number, page in enumerate(reader.pages, start=1):
@@ -53,8 +65,9 @@ def _extract_pdf(content: bytes) -> list[ExtractedSection]:
             sections.append(ExtractedSection(text, page_number))
     if not sections:
         raise DocumentParsingError(
+            ProcessingErrorCode.NO_EXTRACTABLE_TEXT,
             'The PDF has no extractable text; scanned or image-only PDFs '
-            'are not supported'
+            'are not supported',
         )
     return sections
 
@@ -96,13 +109,20 @@ def validate_docx_package(content: bytes) -> None:
             parts = package.infolist()
     except BadZipFile as exc:
         raise DocumentParsingError(
-            'File content does not match its extension'
+            ProcessingErrorCode.INVALID_DOCX,
+            'File content does not match its extension',
         ) from exc
 
     if not DOCX_REQUIRED_PARTS <= {part.filename for part in parts}:
-        raise DocumentParsingError('File content does not match its extension')
+        raise DocumentParsingError(
+            ProcessingErrorCode.INVALID_DOCX,
+            'File content does not match its extension',
+        )
     if sum(part.file_size for part in parts) > MAX_DOCX_UNCOMPRESSED_BYTES:
-        raise DocumentParsingError('The DOCX file expands to an unsafe size')
+        raise DocumentParsingError(
+            ProcessingErrorCode.DOCX_TOO_LARGE,
+            'The DOCX file expands to an unsafe size',
+        )
 
 
 def _clean(text: str) -> str:

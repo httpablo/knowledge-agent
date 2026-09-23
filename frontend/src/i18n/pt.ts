@@ -63,6 +63,22 @@ const pt: Translation = {
   documentStatusProcessing: 'Processando',
   documentStatusReady: 'Pronto',
   documentStatusFailed: 'Falhou',
+  processingErrorEncryptedPdf:
+    'Este PDF está protegido por senha e não pode ser processado.',
+  processingErrorNoExtractableText:
+    'Não encontramos texto legível neste documento. Arquivos escaneados ou só com imagem não são suportados.',
+  processingErrorInvalidDocx:
+    'O conteúdo deste arquivo não corresponde à sua extensão.',
+  processingErrorDocxTooLarge:
+    'Este arquivo DOCX é grande demais para ser processado.',
+  processingErrorParsingFailed: 'Não foi possível ler este arquivo.',
+  processingErrorFileUnreadable:
+    'Não conseguimos ler o arquivo enviado. Tente enviar novamente.',
+  processingErrorEmbeddingFailed:
+    'Não conseguimos processar o conteúdo deste documento. Tente enviar novamente.',
+  processingErrorEmbeddingUnavailable:
+    'O serviço de IA ficou indisponível durante o processamento deste documento. Tente enviar novamente.',
+  processingErrorUnknown: 'Não foi possível processar este documento.',
   supportedDocumentFormats:
     'Formatos aceitos: PDF, TXT, DOCX. Tamanho máximo: {{size}} MB.',
   unsupportedFileType: 'Tipo de arquivo não suportado. Use PDF, TXT ou DOCX.',

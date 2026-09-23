@@ -5,6 +5,7 @@ from models.documents import (
     Document,
     DocumentChunk,
     DocumentStatus,
+    ProcessingErrorCode,
 )
 from models.organizations import (
     MembershipRole,
@@ -25,5 +26,6 @@ __all__ = [
     'MessageRole',
     'Organization',
     'OrganizationMembership',
+    'ProcessingErrorCode',
     'User',
 ]

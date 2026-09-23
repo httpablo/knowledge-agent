@@ -19,7 +19,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import Document, DocumentChunk, DocumentStatus
+from models import Document, DocumentChunk, DocumentStatus, ProcessingErrorCode
 from services.chunking import TextChunk, chunk_sections
 from services.embeddings import (
     EMBEDDING_BATCH_SIZE,
@@ -58,7 +58,9 @@ class ProcessingLeaseActiveError(Exception):
 
 
 class _ProcessingFailure(Exception):
-    """Carries the message stored in Document.processing_error."""
+    def __init__(self, code: ProcessingErrorCode, message: str) -> None:
+        super().__init__(message)
+        self.code = code
 
 
 async def process_document(
@@ -75,7 +77,7 @@ async def process_document(
         chunks = await _prepare_chunks(storage, document)
         await _embed_and_store_chunks(session, document, chunks)
     except _ProcessingFailure as exc:
-        await _fail(session, document.id, str(exc))
+        await _fail(session, document.id, exc.code)
         await _discard_stored_file(
             session, storage, document.id, document.storage_key
         )
@@ -130,7 +132,10 @@ async def _download(
         return await storage.download(document.storage_key)
     except Exception as exc:
         logger.exception('Could not download document %s', document.id)
-        raise _ProcessingFailure('Could not read the uploaded file') from exc
+        raise _ProcessingFailure(
+            ProcessingErrorCode.FILE_UNREADABLE,
+            'Could not read the uploaded file',
+        ) from exc
 
 
 def _extract_text(
@@ -145,7 +150,7 @@ def _extract_text(
             exc,
             exc_info=exc.__cause__ is not None,
         )
-        raise _ProcessingFailure(str(exc)) from exc
+        raise _ProcessingFailure(exc.code, str(exc)) from exc
 
 
 async def _embed_and_store_chunks(
@@ -185,7 +190,9 @@ async def _embed_and_persist_batch(
         raise
     except EmbeddingError as exc:
         logger.exception('Could not embed document %s', document.id)
-        raise _ProcessingFailure(str(exc)) from exc
+        raise _ProcessingFailure(
+            ProcessingErrorCode.EMBEDDING_FAILED, str(exc)
+        ) from exc
 
     session.add_all([
         DocumentChunk(
@@ -295,7 +302,7 @@ async def fail_pending_document(
     session: AsyncSession,
     storage: StorageService,
     document_id: UUID,
-    error: str,
+    code: ProcessingErrorCode,
 ) -> None:
     async with session.begin():
         storage_key = await session.scalar(
@@ -304,17 +311,19 @@ async def fail_pending_document(
                 Document.id == document_id,
                 Document.status == DocumentStatus.PENDING,
             )
-            .values(status=DocumentStatus.FAILED, processing_error=error)
+            .values(status=DocumentStatus.FAILED, processing_error=code.value)
             .returning(Document.storage_key)
         )
     if storage_key:
         await _discard_stored_file(session, storage, document_id, storage_key)
 
 
-async def _fail(session: AsyncSession, document_id: UUID, error: str) -> None:
+async def _fail(
+    session: AsyncSession, document_id: UUID, code: ProcessingErrorCode
+) -> None:
     async with session.begin():
         await session.execute(
             update(Document)
             .where(Document.id == document_id)
-            .values(status=DocumentStatus.FAILED, processing_error=error)
+            .values(status=DocumentStatus.FAILED, processing_error=code.value)
         )

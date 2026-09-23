@@ -28,6 +28,17 @@ class DocumentStatus(StrEnum):
     FAILED = 'FAILED'
 
 
+class ProcessingErrorCode(StrEnum):
+    ENCRYPTED_PDF = 'ENCRYPTED_PDF'
+    NO_EXTRACTABLE_TEXT = 'NO_EXTRACTABLE_TEXT'
+    INVALID_DOCX = 'INVALID_DOCX'
+    DOCX_TOO_LARGE = 'DOCX_TOO_LARGE'
+    PARSING_FAILED = 'PARSING_FAILED'
+    FILE_UNREADABLE = 'FILE_UNREADABLE'
+    EMBEDDING_FAILED = 'EMBEDDING_FAILED'
+    EMBEDDING_UNAVAILABLE = 'EMBEDDING_UNAVAILABLE'
+
+
 class Document(Base):
     __tablename__ = 'documents'
     __table_args__ = (UniqueConstraint('id', 'organization_id'),)

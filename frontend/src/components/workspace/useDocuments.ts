@@ -19,6 +19,21 @@ export const STATUS_LABEL_KEYS: Record<DocumentStatus, keyof Translation> = {
   FAILED: 'documentStatusFailed',
 }
 
+const PROCESSING_ERROR_KEYS: Record<string, keyof Translation> = {
+  ENCRYPTED_PDF: 'processingErrorEncryptedPdf',
+  NO_EXTRACTABLE_TEXT: 'processingErrorNoExtractableText',
+  INVALID_DOCX: 'processingErrorInvalidDocx',
+  DOCX_TOO_LARGE: 'processingErrorDocxTooLarge',
+  PARSING_FAILED: 'processingErrorParsingFailed',
+  FILE_UNREADABLE: 'processingErrorFileUnreadable',
+  EMBEDDING_FAILED: 'processingErrorEmbeddingFailed',
+  EMBEDDING_UNAVAILABLE: 'processingErrorEmbeddingUnavailable',
+}
+
+export function processingErrorKeyFor(code: string): keyof Translation {
+  return PROCESSING_ERROR_KEYS[code] ?? 'processingErrorUnknown'
+}
+
 export type RejectedFile = { id: string; name: string; reason: string }
 
 type RefreshState = 'ok' | 'retrying' | 'failed'
