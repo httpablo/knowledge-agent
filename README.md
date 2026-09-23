@@ -134,15 +134,15 @@ Nenhuma das escolhas abaixo é a única forma certa de resolver o problema — s
 
 ## Modelo de dados
 
-| Tabela | Responsabilidade | Chave primária | Relacionamentos principais |
-| --- | --- | --- | --- |
-| `users` | Conta autenticada (e-mail, hash de senha) | `id` | N:N com `organizations` via `organization_memberships`; 1:N com `conversations` |
-| `organizations` | Tenant/workspace — unidade de isolamento dos dados | `id` | 1:N com `documents`, `conversations` e `organization_memberships` |
-| `organization_memberships` | Associação usuário-organização, com papel (`OWNER`/`MEMBER`) | `(user_id, organization_id)` | N:1 com `users`; N:1 com `organizations` |
-| `documents` | Um arquivo enviado e seu status de processamento | `id` | N:1 com `organizations`; 1:N com `document_chunks`; N:1 opcional com `users` (`uploaded_by`) |
-| `document_chunks` | Um trecho de documento com seu embedding vetorial | `id` | FK composta `(document_id, organization_id)` → `documents(id, organization_id)` |
-| `conversations` | Uma thread de chat, presa a um usuário dentro de uma organização | `id` | N:1 com `organizations`; N:1 com `users`; 1:N com `messages` |
-| `messages` | Uma mensagem (pergunta ou resposta) de uma conversa | `id` | N:1 com `conversations` |
+| Tabela | Responsabilidade | Chave primária |
+| --- | --- | --- |
+| `users` | Conta autenticada (e-mail, hash de senha) | `id` |
+| `organizations` | Tenant/workspace — unidade de isolamento dos dados | `id` |
+| `organization_memberships` | Associação usuário-organização, com papel (`OWNER`/`MEMBER`) | `(user_id, organization_id)` |
+| `documents` | Um arquivo enviado e seu status de processamento | `id` |
+| `document_chunks` | Um trecho de documento com seu embedding vetorial | `id` |
+| `conversations` | Uma thread de chat, presa a um usuário dentro de uma organização | `id` |
+| `messages` | Uma mensagem (pergunta ou resposta) de uma conversa | `id` |
 
 O modelo se divide em dois grupos naturais: quem tem acesso a quê (organizações, usuários e a associação entre eles), e o que cada organização produz dentro do sistema (documentos e conversas).
 
